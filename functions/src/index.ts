@@ -36,15 +36,15 @@ export const callback = functions.https.onRequest((req, res) => {
                                 You can close this tab now.
                             </h1>
                         `))
-                        .catch((e) => {
+                        .catch((e: any) => {
                             console.error(e);
                             res.send("Error!");
                         });
-                }).catch((e) => {
+                }).catch((e: any) => {
                     console.error(e);
                     res.send("Error!");
                 });
-            }).catch((e) => {
+            }).catch((e: any) => {
                 console.error(e);
                 res.send("Error!");
             });
@@ -57,19 +57,18 @@ export const blink = functions.https.onCall(async (data, context) => {
     const prom = db.doc(`users/${user}`).get().then((snapshot: any) => {
         if (snapshot.exists) {
             console.log(snapshot.data().permissions, data.me)
-            if (snapshot?.data().permissions.includes(data.me)) {
+            if (snapshot.data().permissions.includes(data.me)) {
                 if (snapshot?.data().api.name === "Philips Hue") {
                     const cred = snapshot?.data()?.api?.credentials;
                     if (!cred) return "Could not connect to light";
-                    remoteBootstrap.connectWithTokens(
+                    return remoteBootstrap.connectWithTokens(
                         cred.tokens.access.value, cred.tokens.refresh.value, cred.username)
                         .then((api: Api) => {
                             if (snapshot.data().light.name === "Not selected" || null) {
                                 return "User has no lights";
                             }
-                            api.lights.setLightState(snapshot.data().light.id, { on: true }).then((result) => {
-                                console.log(result);
-                                return result;
+                            api.lights.setLightState(snapshot.data().light.id, { on: true }).then(() => {
+                                return "ok";
                             }).catch((e) => {
                                 console.error(e);
                                 return "Could not blink light";
@@ -79,11 +78,10 @@ export const blink = functions.https.onCall(async (data, context) => {
                             console.error(e);
                             return "Could not connect to light";
                         });
-                    return "Unknown error";
                 } else return "Wrong API";
             } else return "You have no permissions";
         } else return "Could not connect to light";
-    }).catch((e) => {
+    }).catch((e: any) => {
         console.error(e);
         return "Could not find user";
     });

@@ -29,7 +29,7 @@ class _HomePageState extends State<HomePage> {
       'uid': uid,
       'me': FirebaseAuth.instance.currentUser!.uid,
     });
-    if (resp.data == "ok") {
+    if (resp.data == 'ok') {
       setState(() {
         _containerColor = Colors.grey[600] ?? const Color(0xFFFFFFFF);
       });
@@ -41,12 +41,11 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _createLink() async {
     final dynamicLinkParams = DynamicLinkParameters(
-      link: Uri.parse("https://lalo-2605.web.app/" +
+      link: Uri.parse('https://lalo-2605.web.app/' +
           FirebaseAuth.instance.currentUser!.uid),
-      uriPrefix: "https://app-lalo.tk/link",
+      uriPrefix: 'https://app-lalo.tk/link',
       androidParameters:
-          const AndroidParameters(packageName: "de.kjellhanken.lalo"),
-      iosParameters: const IOSParameters(bundleId: "de.kjellhanken.lalo"),
+          const AndroidParameters(packageName: 'de.kjellhanken.lalo'),
     );
     final link = await FirebaseDynamicLinks.instance.buildShortLink(
         dynamicLinkParams,
