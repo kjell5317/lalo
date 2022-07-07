@@ -12,19 +12,21 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
-  firebase_core: ^1.13.1
-  cloud_firestore: ^3.1.10
-  firebase_auth: ^3.3.9
-  google_sign_in: ^5.2.4
-  firebase_analytics: ^9.1.2
-  firebase_crashlytics: ^2.5.3
+  firebase_core: ^1.19.1
+  cloud_firestore: ^3.2.1
+  firebase_auth: ^3.4.1
+  google_sign_in: ^5.3.3
+  firebase_dynamic_links: ^4.3.1
+  firebase_crashlytics: ^2.8.4
   google_fonts: ^2.3.1
-  provider: ^6.0.2
   font_awesome_flutter: ^9.2.0
   flutterfire_ui: ^0.3.6
   settings_ui: ^2.0.2
   url_launcher: ^6.0.20
   cloud_functions: ^3.2.11
+  fluttertoast: ^8.0.9
+  share_plus: ^4.0.10
+  firebase_analytics: ^9.1.12
 
 dev_dependencies:
   flutter_test:

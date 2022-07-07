@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-// import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
-import 'package:flutterfire_ui/i10n.dart';
 import 'package:lalo/services/services.dart';
-import 'package:lalo/services/routes.dart';
-import 'package:lalo/services/theme.dart';
 
 import 'package:lalo/pages/login.dart';
 import 'package:lalo/pages/home.dart';
@@ -21,14 +18,14 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
-  // FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+  FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   runApp(const App());
 }
 
 class App extends StatefulWidget {
   const App({Key? key}) : super(key: key);
   static const List _pages = [
-    ["Home", "Mehr"],
+    ['Home', 'Menu'],
     [HomePage(), MorePage()]
   ];
 
@@ -48,12 +45,6 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     return MaterialApp(
       routes: routes,
-      localizationsDelegates: [
-        FlutterFireUILocalizations.withDefaultOverrides(const LabelOverrides()),
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        FlutterFireUILocalizations.delegate,
-      ],
       home: StreamBuilder(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
@@ -72,10 +63,11 @@ class _AppState extends State<App> {
                         child: CircleAvatar(
                           backgroundColor: Colors.grey[400],
                           child: Text(
-                            FirebaseAuth.instance.currentUser?.displayName
+                            FirebaseAuth.instance.currentUser?.email
                                     ?.substring(0, 2)
+                                    .split('@')[0]
                                     .toUpperCase() ??
-                                "HI",
+                                'HI',
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white),
@@ -93,10 +85,10 @@ class _AppState extends State<App> {
                   items: const <BottomNavigationBarItem>[
                     BottomNavigationBarItem(
                       icon: Icon(Icons.home),
-                      label: "Home",
+                      label: 'Home',
                     ),
                     BottomNavigationBarItem(
-                        icon: Icon(Icons.menu), label: "Mehr"),
+                        icon: Icon(Icons.menu), label: 'Menu'),
                   ],
                   currentIndex: _selectedIndex,
                   onTap: _onItemTapped,

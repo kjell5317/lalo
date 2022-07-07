@@ -1,18 +1,153 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:lalo/pages/loading.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:share_plus/share_plus.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Text("Home"),
-          Icon(Icons.home),
-        ],
-      ),
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  Color _containerColor = Colors.orange;
+
+  final Stream<DocumentSnapshot> _userStream = FirebaseFirestore.instance
+      .collection('users')
+      .doc(FirebaseAuth.instance.currentUser!.uid)
+      .snapshots();
+
+  Future<void> _blink(String uid) async {
+    HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('blink');
+    final resp = await callable.call(<String, String>{
+      'uid': uid,
+      'me': FirebaseAuth.instance.currentUser!.uid,
+    });
+    if (resp.data == "ok") {
+      setState(() {
+        _containerColor = Colors.grey[600] ?? const Color(0xFFFFFFFF);
+      });
+      Fluttertoast.showToast(msg: 'Success!');
+    } else {
+      Fluttertoast.showToast(msg: resp.data);
+    }
+  }
+
+  Future<void> _createLink() async {
+    final dynamicLinkParams = DynamicLinkParameters(
+      link: Uri.parse("https://lalo-2605.web.app/" +
+          FirebaseAuth.instance.currentUser!.uid),
+      uriPrefix: "https://app-lalo.tk/link",
+      androidParameters:
+          const AndroidParameters(packageName: "de.kjellhanken.lalo"),
+      iosParameters: const IOSParameters(bundleId: "de.kjellhanken.lalo"),
     );
+    final link = await FirebaseDynamicLinks.instance.buildShortLink(
+        dynamicLinkParams,
+        shortLinkType: ShortDynamicLinkType.unguessable);
+    ShareResult result = await Share.shareWithResult(link.toString());
+    Fluttertoast.showToast(msg: result.toString());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<dynamic>(
+        stream: _userStream,
+        builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+          if (snapshot.hasData) {
+            if (snapshot.data['friends'].length < 1) {
+              return GridView.count(
+                  primary: false,
+                  padding: const EdgeInsets.all(20),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  crossAxisCount: 2,
+                  children: <Widget>[
+                    // TODO: add visual feedback
+                    GestureDetector(
+                        onTap: () => {_createLink()},
+                        child: AspectRatio(
+                          aspectRatio: 1.0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _containerColor,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    'Add your first friend',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontSize: 20, color: Colors.white),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: FaIcon(FontAwesomeIcons.plus,
+                                      color: Colors.white),
+                                )
+                              ],
+                            ),
+                          ),
+                        ))
+                  ]);
+            } else {
+              return GridView.count(
+                  primary: false,
+                  padding: const EdgeInsets.all(20),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  crossAxisCount: 2,
+                  children: snapshot.data['friends']
+                      .map((i) => GestureDetector(
+                          onTap: () => {_blink(i['uid'])},
+                          child: AspectRatio(
+                            aspectRatio: 1.0,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(i['name'],
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                            fontSize: 24,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: FaIcon(FontAwesomeIcons.lightbulb,
+                                        color: Colors.white),
+                                  )
+                                ],
+                              ),
+                            ),
+                          )))
+                      .toList()
+                      .cast<Widget>());
+            }
+          }
+          return const LoadingScreen();
+        });
   }
 }
