@@ -36,15 +36,15 @@ export const callback = functions.https.onRequest((req, res) => {
                                 You can close this tab now.
                             </h1>
                         `))
-                        .catch((e) => {
+                        .catch((e: any) => {
                             console.error(e);
                             res.send("Error!");
                         });
-                }).catch((e) => {
+                }).catch((e: any) => {
                     console.error(e);
                     res.send("Error!");
                 });
-            }).catch((e) => {
+            }).catch((e: any) => {
                 console.error(e);
                 res.send("Error!");
             });
@@ -57,7 +57,7 @@ export const blink = functions.https.onCall(async (data, context) => {
     const prom = db.doc(`users/${user}`).get().then((snapshot: any) => {
         if (snapshot.exists) {
             console.log(snapshot.data().permissions, data.me)
-            if (snapshot?.data().permissions.includes(data.me)) {
+            if (snapshot.data().permissions.includes(data.me)) {
                 if (snapshot?.data().api.name === "Philips Hue") {
                     const cred = snapshot?.data()?.api?.credentials;
                     if (!cred) return "Could not connect to light";
@@ -67,8 +67,13 @@ export const blink = functions.https.onCall(async (data, context) => {
                             if (snapshot.data().light.name === "Not selected" || null) {
                                 return "User has no lights";
                             }
+<<<<<<< HEAD
                             return api.lights.setLightState(snapshot.data().light.id, { on: true }).then((result) => {
                                 return "Success!";
+=======
+                            api.lights.setLightState(snapshot.data().light.id, { on: true }).then(() => {
+                                return "ok";
+>>>>>>> 28cbac9384f5c235d943a6f705f6a519ee310d6a
                             }).catch((e) => {
                                 console.error(e);
                                 return "Could not blink light";
@@ -80,7 +85,7 @@ export const blink = functions.https.onCall(async (data, context) => {
                 } else return "Wrong API";
             } else return "You have no permissions";
         } else return "Could not connect to light";
-    }).catch((e) => {
+    }).catch((e: any) => {
         console.error(e);
         return "Could not find user";
     });

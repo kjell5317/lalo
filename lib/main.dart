@@ -22,7 +22,7 @@ void main() async {
   );
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
   FirebaseAnalytics analytics = FirebaseAnalytics.instance;
-  PendingDynamicLinkData? initialLink;
+  dynamic initialLink;
   if (!kIsWeb) {
     initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
   }
