@@ -1,9 +1,12 @@
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:lalo/services/services.dart';
 
@@ -19,11 +22,17 @@ void main() async {
   );
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
   FirebaseAnalytics analytics = FirebaseAnalytics.instance;
-  runApp(const App());
+  PendingDynamicLinkData? initialLink;
+  if (!kIsWeb) {
+    initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
+  }
+  await dotenv.load(fileName: '.env');
+
+  runApp(App(initialLink));
 }
 
 class App extends StatefulWidget {
-  const App({Key? key}) : super(key: key);
+  const App(PendingDynamicLinkData? initialLink, {Key? key}) : super(key: key);
   static const List _pages = [
     ['Home', 'Menu'],
     [HomePage(), MorePage()]

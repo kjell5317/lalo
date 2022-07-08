@@ -27,6 +27,7 @@ dependencies:
   fluttertoast: ^8.0.9
   share_plus: ^4.0.10
   firebase_analytics: ^9.1.12
+  flutter_dotenv: ^5.0.2
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +36,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+assets:
+  - .env

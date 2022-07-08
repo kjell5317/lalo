@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lalo/pages/loading.dart';
@@ -29,30 +30,40 @@ class _HomePageState extends State<HomePage> {
       'uid': uid,
       'me': FirebaseAuth.instance.currentUser!.uid,
     });
-    if (resp.data == "ok") {
+    if (resp.data == 'Success!') {
       setState(() {
         _containerColor = Colors.grey[600] ?? const Color(0xFFFFFFFF);
       });
-      Fluttertoast.showToast(msg: 'Success!');
-    } else {
-      Fluttertoast.showToast(msg: resp.data);
     }
+    Fluttertoast.showToast(msg: resp.data);
   }
 
   Future<void> _createLink() async {
-    final dynamicLinkParams = DynamicLinkParameters(
-      link: Uri.parse("https://lalo-2605.web.app/" +
-          FirebaseAuth.instance.currentUser!.uid),
-      uriPrefix: "https://app-lalo.tk/link",
-      androidParameters:
-          const AndroidParameters(packageName: "de.kjellhanken.lalo"),
-      iosParameters: const IOSParameters(bundleId: "de.kjellhanken.lalo"),
-    );
-    final link = await FirebaseDynamicLinks.instance.buildShortLink(
-        dynamicLinkParams,
-        shortLinkType: ShortDynamicLinkType.unguessable);
-    ShareResult result = await Share.shareWithResult(link.toString());
-    Fluttertoast.showToast(msg: result.toString());
+    DocumentReference ref =
+        FirebaseFirestore.instance.collection('links').doc();
+    var body = {
+      'dynamicLinkInfo': {
+        'domainUriPrefix': 'https://app-lalo.tk/link',
+        'link': 'https://lalo-2605.web.app/${ref.id}',
+        'androidInfo': {'androidPackageName': 'de.kjellhanken.lalo'},
+        'suffix': {'option': 'UNGUESSABLE'}
+      }
+    };
+    var res = await http.post(
+        Uri.parse(
+            'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${dotenv.env["WEB_API_KEY"]}'),
+        body: body);
+    if (res.statusCode == 200) {
+      Share.share(res.body).then((_) => {
+            ref.set({
+              'senderId': FirebaseAuth.instance.currentUser!.uid,
+              'senderName': FirebaseAuth.instance.currentUser!.displayName
+            })
+          });
+    } else {
+      Fluttertoast.showToast(
+          msg: res.statusCode.toString() + ': Could not create link');
+    }
   }
 
   @override

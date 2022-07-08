@@ -61,25 +61,22 @@ export const blink = functions.https.onCall(async (data, context) => {
                 if (snapshot?.data().api.name === "Philips Hue") {
                     const cred = snapshot?.data()?.api?.credentials;
                     if (!cred) return "Could not connect to light";
-                    remoteBootstrap.connectWithTokens(
+                    return remoteBootstrap.connectWithTokens(
                         cred.tokens.access.value, cred.tokens.refresh.value, cred.username)
                         .then((api: Api) => {
                             if (snapshot.data().light.name === "Not selected" || null) {
                                 return "User has no lights";
                             }
-                            api.lights.setLightState(snapshot.data().light.id, { on: true }).then((result) => {
-                                console.log(result);
-                                return result;
+                            return api.lights.setLightState(snapshot.data().light.id, { on: true }).then((result) => {
+                                return "Success!";
                             }).catch((e) => {
                                 console.error(e);
                                 return "Could not blink light";
                             });
-                            return "Idk how promises work";
                         }).catch((e) => {
                             console.error(e);
                             return "Could not connect to light";
                         });
-                    return "Unknown error";
                 } else return "Wrong API";
             } else return "You have no permissions";
         } else return "Could not connect to light";
