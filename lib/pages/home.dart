@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -30,11 +32,7 @@ class _HomePageState extends State<HomePage> {
       'uid': uid,
       'me': FirebaseAuth.instance.currentUser!.uid,
     });
-<<<<<<< HEAD
     if (resp.data == 'Success!') {
-=======
-    if (resp.data == 'ok') {
->>>>>>> 28cbac9384f5c235d943a6f705f6a519ee310d6a
       setState(() {
         _containerColor = Colors.grey[600] ?? const Color(0xFFFFFFFF);
       });
@@ -43,7 +41,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _createLink() async {
-<<<<<<< HEAD
     DocumentReference ref =
         FirebaseFirestore.instance.collection('links').doc();
     var body = {
@@ -51,13 +48,13 @@ class _HomePageState extends State<HomePage> {
         'domainUriPrefix': 'https://app-lalo.tk/link',
         'link': 'https://lalo-2605.web.app/${ref.id}',
         'androidInfo': {'androidPackageName': 'de.kjellhanken.lalo'},
-        'suffix': {'option': 'UNGUESSABLE'}
-      }
+      },
+      'suffix': {'option': 'UNGUESSABLE'}
     };
     var res = await http.post(
         Uri.parse(
             'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${dotenv.env["WEB_API_KEY"]}'),
-        body: body);
+        body: jsonEncode(body));
     if (res.statusCode == 200) {
       Share.share(res.body).then((_) => {
             ref.set({
@@ -69,20 +66,6 @@ class _HomePageState extends State<HomePage> {
       Fluttertoast.showToast(
           msg: res.statusCode.toString() + ': Could not create link');
     }
-=======
-    final dynamicLinkParams = DynamicLinkParameters(
-      link: Uri.parse('https://lalo-2605.web.app/' +
-          FirebaseAuth.instance.currentUser!.uid),
-      uriPrefix: 'https://app-lalo.tk/link',
-      androidParameters:
-          const AndroidParameters(packageName: 'de.kjellhanken.lalo'),
-    );
-    final link = await FirebaseDynamicLinks.instance.buildShortLink(
-        dynamicLinkParams,
-        shortLinkType: ShortDynamicLinkType.unguessable);
-    ShareResult result = await Share.shareWithResult(link.toString());
-    Fluttertoast.showToast(msg: result.toString());
->>>>>>> 28cbac9384f5c235d943a6f705f6a519ee310d6a
   }
 
   @override

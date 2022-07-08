@@ -67,13 +67,8 @@ export const blink = functions.https.onCall(async (data, context) => {
                             if (snapshot.data().light.name === "Not selected" || null) {
                                 return "User has no lights";
                             }
-<<<<<<< HEAD
                             return api.lights.setLightState(snapshot.data().light.id, { on: true }).then((result) => {
                                 return "Success!";
-=======
-                            api.lights.setLightState(snapshot.data().light.id, { on: true }).then(() => {
-                                return "ok";
->>>>>>> 28cbac9384f5c235d943a6f705f6a519ee310d6a
                             }).catch((e) => {
                                 console.error(e);
                                 return "Could not blink light";
