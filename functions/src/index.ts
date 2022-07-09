@@ -53,7 +53,6 @@ export const callback = functions.https.onRequest((req, res) => {
 
 // Blink light
 export const blink = functions.https.onCall((data, _context) => {
-    console.log(data.user);
     return db.doc(`users/${data.user.uid}`).get().then((snapshot: any) => {
         if (snapshot.exists) {
             if (snapshot.data().permissions.includes(data.me)) {
@@ -88,7 +87,16 @@ export const blink = functions.https.onCall((data, _context) => {
                     return "Could not remove friend";
                     });
             }
-        } else return "Could not connect to database";
+        } else {
+            return db.doc(`users/${data.me}`).update({
+            friends: admin.firestore.FieldValue.arrayRemove(data.user)
+        }).then(() => {
+            return "Not your friend anymore";
+        }).catch((e) => {
+            console.error(e);
+            return "Could not remove friend";
+        });
+        }
     }).catch((e: any) => {
         console.error(e);
         return "Could not find user";
