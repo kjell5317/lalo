@@ -10,6 +10,7 @@
     ]
   },
   "hosting": {
+    "predeploy": "flutter build web",
     "public": "build/web",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "appAssociation": "AUTO",

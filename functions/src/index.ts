@@ -52,11 +52,10 @@ export const callback = functions.https.onRequest((req, res) => {
 });
 
 // Blink light
-export const blink = functions.https.onCall(async (data, context) => {
-    const user = data.uid;
-    const prom = db.doc(`users/${user}`).get().then((snapshot: any) => {
+export const blink = functions.https.onCall((data, _context) => {
+    console.log(data.user);
+    return db.doc(`users/${data.user.uid}`).get().then((snapshot: any) => {
         if (snapshot.exists) {
-            console.log(snapshot.data().permissions, data.me)
             if (snapshot.data().permissions.includes(data.me)) {
                 if (snapshot?.data().api.name === "Philips Hue") {
                     const cred = snapshot?.data()?.api?.credentials;
@@ -78,11 +77,33 @@ export const blink = functions.https.onCall(async (data, context) => {
                             return "Could not connect to light";
                         });
                 } else return "Wrong API";
-            } else return "You have no permissions";
-        } else return "Could not connect to light";
+
+            } else {
+                return db.doc(`users/${data.me}`).update({
+                    friends: admin.firestore.FieldValue.arrayRemove(data.user)
+                }).then(() => {
+                    return "Not your friend anymore";
+                }).catch((e) => {
+                    console.error(e);
+                    return "Could not remove friend";
+                    });
+            }
+        } else return "Could not connect to database";
     }).catch((e: any) => {
         console.error(e);
         return "Could not find user";
     });
-    return await prom;
+});
+
+// Accept friend request
+export const accept = functions.https.onCall((data, _context) => {
+    return db.doc(`users/${data.senderId}`).update({
+        "friends": admin.firestore.FieldValue.arrayUnion({
+            "name": data.friendName,
+            "uid": data.friendId
+        })
+    }).then(() => "Request accepted").catch((e: any) => {
+        console.error(e);
+        return "Request could not be accepted";
+    });
 });

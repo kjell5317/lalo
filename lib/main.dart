@@ -22,17 +22,18 @@ void main() async {
   );
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
   FirebaseAnalytics analytics = FirebaseAnalytics.instance;
-  dynamic initialLink;
   if (!kIsWeb) {
-    initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
+    initialLink = (await FirebaseDynamicLinks.instance.getInitialLink())?.link;
+  } else if (Uri.base.queryParameters['id'] != null) {
+    initialLink = Uri.parse(Uri.base.queryParameters['id']!);
   }
-  await dotenv.load(fileName: '.env');
+  await dotenv.load(fileName: 'web.env');
 
-  runApp(App(initialLink));
+  runApp(const App());
 }
 
 class App extends StatefulWidget {
-  const App(PendingDynamicLinkData? initialLink, {Key? key}) : super(key: key);
+  const App({Key? key}) : super(key: key);
   static const List _pages = [
     ['Home', 'Menu'],
     [HomePage(), MorePage()]
@@ -54,58 +55,60 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     return MaterialApp(
       routes: routes,
-      home: StreamBuilder(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const LoadingScreen();
-            }
-            if (snapshot.hasData) {
-              return Scaffold(
-                appBar: AppBar(
-                  title: Text(App._pages[0][_selectedIndex]),
-                  actions: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: GestureDetector(
-                        onTap: () => Navigator.pushNamed(context, '/profile'),
-                        child: CircleAvatar(
-                          backgroundColor: Colors.grey[400],
-                          child: Text(
-                            FirebaseAuth.instance.currentUser?.email
-                                    ?.substring(0, 2)
-                                    .split('@')[0]
-                                    .toUpperCase() ??
-                                'HI',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
+      home: Builder(builder: (context) {
+        return StreamBuilder(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const LoadingScreen();
+              }
+              if (snapshot.hasData) {
+                return Scaffold(
+                  appBar: AppBar(
+                    title: Text(App._pages[0][_selectedIndex]),
+                    actions: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, '/profile'),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.grey[400],
+                            child: Text(
+                              FirebaseAuth.instance.currentUser?.email
+                                      ?.substring(0, 2)
+                                      .split('@')[0]
+                                      .toUpperCase() ??
+                                  'HI',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                body: IndexedStack(
-                  index: _selectedIndex,
-                  children: App._pages[1],
-                ),
-                bottomNavigationBar: BottomNavigationBar(
-                  items: const <BottomNavigationBarItem>[
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.home),
-                      label: 'Home',
-                    ),
-                    BottomNavigationBarItem(
-                        icon: Icon(Icons.menu), label: 'Menu'),
-                  ],
-                  currentIndex: _selectedIndex,
-                  onTap: _onItemTapped,
-                ),
-              );
-            }
-            return const LoginPage();
-          }),
+                    ],
+                  ),
+                  body: IndexedStack(
+                    index: _selectedIndex,
+                    children: App._pages[1],
+                  ),
+                  bottomNavigationBar: BottomNavigationBar(
+                    items: const <BottomNavigationBarItem>[
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.home),
+                        label: 'Home',
+                      ),
+                      BottomNavigationBarItem(
+                          icon: Icon(Icons.menu), label: 'Menu'),
+                    ],
+                    currentIndex: _selectedIndex,
+                    onTap: _onItemTapped,
+                  ),
+                );
+              }
+              return const LoginPage();
+            });
+      }),
       theme: themeLight,
       darkTheme: themeDark,
     );
