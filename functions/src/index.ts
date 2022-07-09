@@ -11,6 +11,7 @@ if (admin.apps.length === 0) {
     admin.initializeApp();
 }
 const db = admin.firestore();
+db.settings({ ignoreUndefinedProperties: true })
 
 // Create credetials
 export const callback = functions.https.onRequest((req, res) => {
@@ -52,8 +53,8 @@ export const callback = functions.https.onRequest((req, res) => {
 });
 
 // Blink light
-export const blink = functions.https.onCall((data, _context) => {
-    return db.doc(`users/${data.user.uid}`).get().then((snapshot: any) => {
+export const blink = functions.https.onCall((data) => {
+    return db.doc(`users/${data.userId}`).get().then((snapshot: any) => {
         if (snapshot.exists) {
             if (snapshot.data().permissions.includes(data.me)) {
                 if (snapshot?.data().api.name === "Philips Hue") {
@@ -65,7 +66,7 @@ export const blink = functions.https.onCall((data, _context) => {
                             if (snapshot.data().light.name === "Not selected" || null) {
                                 return "User has no lights";
                             }
-                            return api.lights.setLightState(snapshot.data().light.id, { on: true }).then((result) => {
+                            return api.lights.setLightState(snapshot.data().light.id, { on: true }).then(() => {
                                 return "Success!";
                             }).catch((e) => {
                                 console.error(e);
@@ -78,33 +79,34 @@ export const blink = functions.https.onCall((data, _context) => {
                 } else return "Wrong API";
 
             } else {
-                return db.doc(`users/${data.me}`).update({
-                    friends: admin.firestore.FieldValue.arrayRemove(data.user)
-                }).then(() => {
-                    return "Not your friend anymore";
-                }).catch((e) => {
-                    console.error(e);
-                    return "Could not remove friend";
-                    });
+                return removeFriend(data)
             }
         } else {
-            return db.doc(`users/${data.me}`).update({
-            friends: admin.firestore.FieldValue.arrayRemove(data.user)
-        }).then(() => {
-            return "Not your friend anymore";
-        }).catch((e) => {
-            console.error(e);
-            return "Could not remove friend";
-        });
+            return removeFriend(data);
         }
     }).catch((e: any) => {
         console.error(e);
-        return "Could not find user";
+        return removeFriend(data);
     });
 });
+/**
+ * Remove a friend
+ * @param {object} data
+ * @return {Promise<string>}
+ */
+function removeFriend(data: {me: string; userId: string, userName: string}): Promise<string> {
+    return db.doc(`users/${data.me}`).update({
+        "friends": admin.firestore.FieldValue.arrayRemove({"uid": data.userId, "name": data.userName })
+    }).then(() => {
+        return "Not your friend anymore";
+    }).catch((e) => {
+        console.error(e);
+        return "Could not remove friend";
+    });
+}
 
 // Accept friend request
-export const accept = functions.https.onCall((data, _context) => {
+export const accept = functions.https.onCall((data) => {
     return db.doc(`users/${data.senderId}`).update({
         "friends": admin.firestore.FieldValue.arrayUnion({
             "name": data.friendName,

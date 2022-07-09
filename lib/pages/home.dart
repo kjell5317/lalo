@@ -29,8 +29,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _blink(Map<String, dynamic> user) async {
     HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('blink');
-    final resp = await callable.call(<String, dynamic>{
-      'user': user,
+    final resp = await callable.call(<String, String>{
+      'userId': user['uid'],
+      'userName': user['name'],
       'me': FirebaseAuth.instance.currentUser!.uid,
     });
     if (resp.data == 'Success!') {
