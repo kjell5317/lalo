@@ -30,7 +30,9 @@ class _HomePageState extends State<HomePage> {
       'userName': user['name'],
       'me': FirebaseAuth.instance.currentUser!.uid,
     });
-    Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
+    if (resp.data != null) {
+      Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
+    }
   }
 
   Future<void> _createLink() async {
