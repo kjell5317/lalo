@@ -210,7 +210,7 @@ class _HomePageState extends State<HomePage> {
         builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
           if (snapshot.hasData) {
             List<Widget> tiles = snapshot.data['friends']
-                .map((i) => GestureDetector(
+                .map((i) => InkWell(
                     onTap: () {
                       _blink(i);
                     },
@@ -249,7 +249,7 @@ class _HomePageState extends State<HomePage> {
                 .toList()
                 .cast<Widget>();
             if (snapshot.data['friends'].length < 10) {
-              tiles.add(GestureDetector(
+              tiles.add(InkWell(
                   onTap: () {
                     _createLink();
                   },
@@ -258,7 +258,7 @@ class _HomePageState extends State<HomePage> {
                     child: Container(
                       padding: const EdgeInsets.all(10.0),
                       decoration: BoxDecoration(
-                        color: Colors.orange,
+                        color: Colors.grey[400],
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(

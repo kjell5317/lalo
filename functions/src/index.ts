@@ -121,7 +121,7 @@ export const blink = functions.https.onCall((data) => {
             console.error(e);
         }
         if (++x <= 4) {
-            setTimeout(blinkLight, 2000, api, id, value);
+            setTimeout(blinkLight, 2000, api, id, !value);
         }
     }
 });

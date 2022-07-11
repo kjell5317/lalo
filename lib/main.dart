@@ -94,7 +94,7 @@ class _AppState extends State<App> {
                           actions: [
                             Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: GestureDetector(
+                              child: InkWell(
                                 onTap: () =>
                                     // TODO: ProfilePage
                                     Navigator.pushNamed(context, '/profile'),
