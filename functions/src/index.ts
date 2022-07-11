@@ -51,12 +51,15 @@ export const callback = functions.https.onRequest((req, res) => {
             });
     } else res.send("Error!");
 });
-
+// TODO: renew credentials
 // Blink light
 export const blink = functions.https.onCall((data) => {
+    let x = 0;
     return db.doc(`users/${data.userId}`).get().then((snapshot: any) => {
         if (snapshot.exists) {
             if (snapshot.data().permissions.includes(data.me)) {
+                if (snapshot?.data().api.name === "No services connected") return "Friend has no light";
+                if (snapshot.data().dnd === true) return;
                 if (snapshot?.data().api.name === "Philips Hue") {
                     const cred = snapshot?.data()?.api?.credentials;
                     if (!cred) return "Could not connect to light";
@@ -64,10 +67,10 @@ export const blink = functions.https.onCall((data) => {
                         cred.tokens.access.value, cred.tokens.refresh.value, cred.username)
                         .then((api: Api) => {
                             if (snapshot.data().light.name === "Not selected" || null) {
-                                return "User has no lights";
+                                return "Friend has no light";
                             }
-                            return api.lights.setLightState(snapshot.data().light.id, { on: true }).then(() => {
-                                return "Success!";
+                            return api.lights.getLightState(snapshot.data().light.id).then((value: any) => {
+                                blinkLight(api, snapshot.data().light.id, value.on);
                             }).catch((e) => {
                                 console.error(e);
                                 return "Could not blink light";
@@ -88,22 +91,40 @@ export const blink = functions.https.onCall((data) => {
         console.error(e);
         return removeFriend(data);
     });
+
+    /**
+     * Remove a friend
+     * @param {object} data
+     * @return {Promise<string>}
+     */
+    function removeFriend(data: { me: string; userId: string, userName: string }): Promise<string> {
+        return db.doc(`users/${data.me}`).update({
+            "friends": admin.firestore.FieldValue.arrayRemove({ "uid": data.userId, "name": data.userName })
+        }).then(() => {
+            return "Not your friend anymore";
+        }).catch((e) => {
+            console.error(e);
+            return "Could not remove friend";
+        });
+    }
+    /**
+     * Blink the light
+     * @param {Api} api
+     * @param {string} id
+     * @param {boolean} value
+     * @return {Promise<void>}
+     */
+    async function blinkLight(api: Api, id: string, value: boolean): Promise<void> {
+        try {
+            await api.lights.setLightState(id, { on: !value });
+        } catch (e) {
+            console.error(e);
+        }
+        if (++x <= 4) {
+            setTimeout(blinkLight, 2000, api, id, value);
+        }
+    }
 });
-/**
- * Remove a friend
- * @param {object} data
- * @return {Promise<string>}
- */
-function removeFriend(data: {me: string; userId: string, userName: string}): Promise<string> {
-    return db.doc(`users/${data.me}`).update({
-        "friends": admin.firestore.FieldValue.arrayRemove({"uid": data.userId, "name": data.userName })
-    }).then(() => {
-        return "Not your friend anymore";
-    }).catch((e) => {
-        console.error(e);
-        return "Could not remove friend";
-    });
-}
 
 // Accept friend request
 export const accept = functions.https.onCall((data) => {

@@ -2,12 +2,10 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lalo/pages/loading.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:lalo/services/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -20,8 +18,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Color _containerColor = Colors.orange;
-
   final Stream<DocumentSnapshot> _userStream = FirebaseFirestore.instance
       .collection('users')
       .doc(FirebaseAuth.instance.currentUser!.uid)
@@ -34,12 +30,7 @@ class _HomePageState extends State<HomePage> {
       'userName': user['name'],
       'me': FirebaseAuth.instance.currentUser!.uid,
     });
-    if (resp.data == 'Success!') {
-      setState(() {
-        _containerColor = Colors.grey[600] ?? const Color(0xFFFFFFFF);
-      });
-    }
-    Fluttertoast.showToast(msg: resp.data);
+    Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
   }
 
   Future<void> _createLink() async {
@@ -55,7 +46,7 @@ class _HomePageState extends State<HomePage> {
     };
     var res = await http.post(
         Uri.parse(
-            'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${dotenv.env["WEB_API_KEY"]}'),
+            'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAUKHRQtdn_rxwt4wGRzzMHVqrDLJSKND0'),
         body: jsonEncode(body));
     if (res.statusCode == 200) {
       Share.share(jsonDecode(res.body)['shortLink']).then((_) => {
@@ -66,34 +57,46 @@ class _HomePageState extends State<HomePage> {
           });
     } else {
       Fluttertoast.showToast(
-          msg: res.statusCode.toString() + ': Could not create link');
+          msg: res.statusCode.toString() + ': Could not create link',
+          timeInSecForIosWeb: 3);
     }
   }
 
   Future<void> _accept() async {
     Navigator.pop(context);
-    DocumentSnapshot<Map<String, dynamic>> sender =
-        await FirebaseFirestore.instance.doc('links/$initialLink').get();
-    FirebaseFirestore.instance
-        .doc('users/${FirebaseAuth.instance.currentUser!.uid}')
-        .update({
-      'permissions':
-          FieldValue.arrayUnion([FirebaseAuth.instance.currentUser!.uid])
+    var senderId;
+    await FirebaseFirestore.instance
+        .doc('links/$initialLink')
+        .get()
+        .then((data) {
+      senderId = data['senderId'];
+      if (!senderId) return;
+      FirebaseFirestore.instance
+          .doc('users/${FirebaseAuth.instance.currentUser!.uid}')
+          .update({
+        'permissions': FieldValue.arrayUnion([senderId])
+      });
     });
+    if (!senderId) {
+      Fluttertoast.showToast(msg: 'User not found', timeInSecForIosWeb: 3);
+      return;
+    }
 
     HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('accept');
     final resp = await callable.call(<String, String>{
-      'senderId': sender['senderId'],
+      'senderId': senderId,
       'friendId': FirebaseAuth.instance.currentUser!.uid,
       'friendName': FirebaseAuth.instance.currentUser!.displayName ?? ''
     });
     FirebaseFirestore.instance.doc('links/$initialLink').delete();
-    Fluttertoast.showToast(msg: resp.data);
+    Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
+    initialLink = null;
   }
 
   void _deny() {
     FirebaseFirestore.instance.doc('links/$initialLink').delete();
     Navigator.pop(context);
+    initialLink = null;
   }
 
   @override
@@ -101,48 +104,100 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (initialLink != null) {
-        DocumentReference<Map<String, dynamic>> ref =
-            FirebaseFirestore.instance.doc('links/$initialLink');
-        DocumentSnapshot<Map<String, dynamic>> link = await ref.get();
-        if (link['senderId'] == FirebaseAuth.instance.currentUser!.uid) {
-          Fluttertoast.showToast(
-              msg: 'You are can\'t be friends with yourself');
-        }
-        DocumentSnapshot<Map<String, dynamic>> perm = await FirebaseFirestore
-            .instance
-            .doc('users/${FirebaseAuth.instance.currentUser!.uid}')
-            .get();
-        if (perm['permissions'].contains(link['senderId'])) {
-          Fluttertoast.showToast(msg: 'You are already friends');
-        } else {
-          showModalBottomSheet<void>(
-            context: context,
-            builder: (BuildContext context) {
-              return SizedBox(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text('${link["senderName"]} want\'s to be your friend'),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            fixedSize: const Size(200, 30)),
-                        child: const Text('Accept'),
-                        onPressed: () => {_accept()},
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            fixedSize: const Size(200, 30)),
-                        child: const Text('Deny'),
-                        onPressed: () => {_deny()},
-                      ),
-                    ],
+        DocumentSnapshot<Map<String, dynamic>> link =
+            await FirebaseFirestore.instance.doc('links/$initialLink').get();
+        if (link.exists) {
+          DocumentSnapshot<Map<String, dynamic>> perm = await FirebaseFirestore
+              .instance
+              .doc('users/${FirebaseAuth.instance.currentUser!.uid}')
+              .get();
+          if (link['senderId'] == FirebaseAuth.instance.currentUser!.uid) {
+            Fluttertoast.showToast(
+                msg: 'You can\'t be friends with yourself',
+                timeInSecForIosWeb: 3);
+          } else if (perm['permissions'].contains(link['senderId'])) {
+            Fluttertoast.showToast(
+                msg: 'You are already friends', timeInSecForIosWeb: 3);
+          } else {
+            showModalBottomSheet<void>(
+              context: context,
+              builder: (BuildContext context) {
+                // if (perm['api']['name'] == 'No services connected') {}
+                if (perm['light'] == 'Not selected') {
+                  Fluttertoast.showToast(
+                      msg: 'Select a light before you can accept the request',
+                      timeInSecForIosWeb: 3);
+                }
+                return SizedBox(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        const Padding(
+                          padding: EdgeInsets.only(top: 15.0, bottom: 5.0),
+                          child: Icon(Icons.group_add,
+                              color: Colors.orange, size: 40.0),
+                        ),
+                        Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Column(children: [
+                              Text(
+                                'Friend Request',
+                                style: Theme.of(context).textTheme.headline5,
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                'from ${link["senderName"]}',
+                                style: Theme.of(context).textTheme.headline6,
+                                textAlign: TextAlign.center,
+                              ),
+                            ])),
+                        Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                fixedSize: const Size(200, 40)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: const [
+                                  Text(
+                                    'Accept',
+                                    style: TextStyle(fontSize: 18),
+                                  ),
+                                  Icon(Icons.check)
+                                ],
+                              ),
+                            ),
+                            onPressed: () => {_accept()},
+                          ),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              fixedSize: const Size(200, 40)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: const [
+                                Text('Deny', style: TextStyle(fontSize: 18)),
+                                Icon(Icons.close)
+                              ],
+                            ),
+                          ),
+                          onPressed: () => {_deny()},
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          );
+                );
+              },
+            );
+          }
+        } else {
+          Fluttertoast.showToast(msg: 'Invalid link', timeInSecForIosWeb: 3);
         }
       }
     });
@@ -156,32 +211,36 @@ class _HomePageState extends State<HomePage> {
           if (snapshot.hasData) {
             List<Widget> tiles = snapshot.data['friends']
                 .map((i) => GestureDetector(
-                    onTap: () => {_blink(i)},
+                    onTap: () {
+                      _blink(i);
+                    },
                     child: AspectRatio(
                       aspectRatio: 1.0,
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(10.0),
                         decoration: BoxDecoration(
                           color: Colors.orange,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(i['name'],
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                      fontSize: 24,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold)),
+                                    fontSize: 24,
+                                    color: Colors.white,
+                                  )),
                             ),
                             const Padding(
                               padding: EdgeInsets.all(8.0),
-                              child: FaIcon(FontAwesomeIcons.lightbulb,
-                                  color: Colors.white),
+                              child: Icon(
+                                Icons.lightbulb,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             )
                           ],
                         ),
@@ -191,13 +250,15 @@ class _HomePageState extends State<HomePage> {
                 .cast<Widget>();
             if (snapshot.data['friends'].length < 10) {
               tiles.add(GestureDetector(
-                  onTap: () => {_createLink()},
+                  onTap: () {
+                    _createLink();
+                  },
                   child: AspectRatio(
                     aspectRatio: 1.0,
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(10.0),
                       decoration: BoxDecoration(
-                        color: _containerColor,
+                        color: Colors.orange,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
@@ -210,13 +271,16 @@ class _HomePageState extends State<HomePage> {
                               'Add a friend',
                               textAlign: TextAlign.center,
                               style:
-                                  TextStyle(fontSize: 20, color: Colors.white),
+                                  TextStyle(fontSize: 24, color: Colors.white),
                             ),
                           ),
                           Padding(
                             padding: EdgeInsets.all(8.0),
-                            child: FaIcon(FontAwesomeIcons.plus,
-                                color: Colors.white),
+                            child: Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           )
                         ],
                       ),

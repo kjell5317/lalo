@@ -15,18 +15,17 @@ class MorePage extends StatefulWidget {
 
 class _MorePageState extends State<MorePage> {
   final Stream<DocumentSnapshot> _userStream = FirebaseFirestore.instance
-      .collection('users')
-      .doc(FirebaseAuth.instance.currentUser!.uid)
+      .doc('users/${FirebaseAuth.instance.currentUser!.uid}')
       .snapshots();
 
   final String _url =
       'https://api.meethue.com//v2/oauth2/authorize?client_id=wq9lMKlb0LypJeExHayCZgXLVQGPuInF&response_type=code&state=' +
           FirebaseAuth.instance.currentUser!.uid;
 
-  var _serviceCaption = 'Enable Philips Hue';
+  var _serviceCaption = 'Connect Philips Hue';
 
   void _launchURL() async {
-    if (_serviceCaption == 'Enable Philips Hue') {
+    if (_serviceCaption == 'Connect Philips Hue') {
       if (!await launch(_url)) throw 'Could not launch $_url';
       Navigator.pop(context);
     } else if (_serviceCaption == 'Remove Philips Hue') {
@@ -41,8 +40,8 @@ class _MorePageState extends State<MorePage> {
         },
         'light': {'name': 'Not selected', 'id': ''}
       }, SetOptions(merge: true));
-      Fluttertoast.showToast(msg: 'Removed Philips Hue');
-      _serviceCaption = 'Enable Philips Hue';
+      Fluttertoast.showToast(msg: 'Removed Philips Hue', timeInSecForIosWeb: 3);
+      _serviceCaption = 'Connect Philips Hue';
       Navigator.pop(context);
     }
   }
@@ -65,8 +64,23 @@ class _MorePageState extends State<MorePage> {
             return SettingsList(
               sections: [
                 SettingsSection(
-                  title: const Text('My light'),
+                  title: const Text(
+                    'My light',
+                    style: TextStyle(fontSize: 18),
+                  ),
                   tiles: <SettingsTile>[
+                    SettingsTile.switchTile(
+                        leading: const Icon(Icons.do_not_disturb),
+                        initialValue: snapshot.data['dnd'],
+                        onToggle: (value) {
+                          setState(() {
+                            FirebaseFirestore.instance
+                                .doc(
+                                    'users/${FirebaseAuth.instance.currentUser!.uid}')
+                                .update({'dnd': value});
+                          });
+                        },
+                        title: const Text('Do Not Disturb')),
                     // Services
                     SettingsTile.navigation(
                         leading: const Icon(Icons.home),
@@ -81,13 +95,32 @@ class _MorePageState extends State<MorePage> {
                                 child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    mainAxisSize: MainAxisSize.min,
                                     children: <Widget>[
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                            fixedSize: const Size(200, 30)),
-                                        child: Text(_serviceCaption),
-                                        onPressed: () => _launchURL(),
+                                      const Padding(
+                                        padding: EdgeInsets.all(15.0),
+                                        child: Icon(Icons.lightbulb,
+                                            color: Colors.orange, size: 40.0),
+                                      ),
+                                      Padding(
+                                          padding: const EdgeInsets.all(15.0),
+                                          child: Text(
+                                            'Connect a service to let your friends blink your light',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headline5,
+                                            textAlign: TextAlign.center,
+                                          )),
+                                      Padding(
+                                        padding: const EdgeInsets.all(15.0),
+                                        child: ElevatedButton(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(10.0),
+                                            child: Text(_serviceCaption,
+                                                style: const TextStyle(
+                                                    fontSize: 18)),
+                                          ),
+                                          onPressed: () => _launchURL(),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -106,44 +139,56 @@ class _MorePageState extends State<MorePage> {
                         // Light Modal
                         if (snapshot.data['api']['name'] !=
                             'No services connected') {
+                          List<Widget> apis = snapshot.data['api']['lights']
+                              .map((i) => ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                      fixedSize: const Size(200, 35)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      i['name'],
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                  onPressed: () => {
+                                        Navigator.pop(context),
+                                        FirebaseFirestore.instance
+                                            .collection('users')
+                                            .doc(FirebaseAuth
+                                                .instance.currentUser!.uid)
+                                            .set({'light': i},
+                                                SetOptions(merge: true))
+                                      }))
+                              .toList()
+                              .cast<Widget>();
+                          apis.insert(
+                              0,
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 15.0),
+                                child: Text('Choose a Light to blink',
+                                    style:
+                                        Theme.of(context).textTheme.headline5),
+                              ));
                           showModalBottomSheet<void>(
                             context: context,
                             builder: (BuildContext context) {
                               return SizedBox(
                                 child: Center(
-                                  child: Column(
+                                  child: SingleChildScrollView(
+                                    child: Column(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: snapshot.data['api']['lights']
-                                          .map((i) => ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                  fixedSize:
-                                                      const Size(200, 30)),
-                                              child: Text(i['name']),
-                                              onPressed: () => {
-                                                    Navigator.pop(context),
-                                                    FirebaseFirestore.instance
-                                                        .collection('users')
-                                                        .doc(FirebaseAuth
-                                                            .instance
-                                                            .currentUser!
-                                                            .uid)
-                                                        .set({
-                                                      'light': i
-                                                    }, SetOptions(merge: true))
-                                                  }))
-                                          .toList()
-                                          .cast<Widget>()
-                                      // TODO: Add heading Text Widget
-                                      // .insert(0, const Text('Choose a Light')),
-                                      ),
+                                      children: apis,
+                                    ),
+                                  ),
                                 ),
                               );
                             },
                           );
                         } else {
-                          Fluttertoast.showToast(msg: 'No services connected');
+                          Fluttertoast.showToast(
+                              msg: 'No services connected',
+                              timeInSecForIosWeb: 3);
                         }
                       },
                     ),

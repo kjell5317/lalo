@@ -25,7 +25,6 @@ var themeLight = ThemeData(
 var themeDark = themeLight.copyWith(
     scaffoldBackgroundColor: Colors.grey[900],
     brightness: Brightness.dark,
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: Colors.grey[600],
+    bottomNavigationBarTheme: themeLight.bottomNavigationBarTheme.copyWith(
       selectedItemColor: Colors.orange,
     ));
