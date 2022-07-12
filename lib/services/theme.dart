@@ -3,9 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 var themeLight = ThemeData(
   brightness: Brightness.light,
+  backgroundColor: Colors.white,
   colorScheme: ThemeData().colorScheme.copyWith(primary: Colors.orange),
   fontFamily: GoogleFonts.roboto().fontFamily,
-  appBarTheme: const AppBarTheme(backgroundColor: Colors.orange),
+  appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.orange, titleTextStyle: TextStyle(fontSize: 24)),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     selectedItemColor: Colors.orange,
   ),
@@ -25,6 +27,11 @@ var themeLight = ThemeData(
 var themeDark = themeLight.copyWith(
     scaffoldBackgroundColor: Colors.grey[900],
     brightness: Brightness.dark,
-    bottomNavigationBarTheme: themeLight.bottomNavigationBarTheme.copyWith(
+    appBarTheme: themeLight.appBarTheme.copyWith(
+      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24),
+    ),
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
       selectedItemColor: Colors.orange,
+      backgroundColor: Colors.grey[900],
+      unselectedItemColor: Colors.grey[100],
     ));

@@ -62,12 +62,13 @@ class _MorePageState extends State<MorePage> {
             }
 
             return SettingsList(
+              contentPadding: const EdgeInsets.all(10),
+              lightTheme:
+                  const SettingsThemeData(settingsListBackground: Colors.white),
+              darkTheme:
+                  SettingsThemeData(settingsListBackground: Colors.grey[900]),
               sections: [
                 SettingsSection(
-                  title: const Text(
-                    'My light',
-                    style: TextStyle(fontSize: 18),
-                  ),
                   tiles: <SettingsTile>[
                     SettingsTile.switchTile(
                         leading: const Icon(Icons.do_not_disturb),
