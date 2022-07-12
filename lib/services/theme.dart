@@ -7,7 +7,8 @@ var themeLight = ThemeData(
   colorScheme: ThemeData().colorScheme.copyWith(primary: Colors.orange),
   fontFamily: GoogleFonts.roboto().fontFamily,
   appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.orange, titleTextStyle: TextStyle(fontSize: 24)),
+      backgroundColor: Colors.orange,
+      titleTextStyle: TextStyle(color: Colors.white, fontSize: 24)),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     selectedItemColor: Colors.orange,
   ),

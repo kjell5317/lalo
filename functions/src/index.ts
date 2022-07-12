@@ -60,6 +60,8 @@ export const blink = functions.https.onCall((data) => {
             if (snapshot.data().permissions.includes(data.me)) {
                 if (snapshot?.data().api.name === "No services connected") return "Friend has no light";
                 if (snapshot.data().dnd === true) return;
+                if (Date.now() - snapshot.data().light.last < 30 * 1000) return;
+                db.doc(`users/${data.userId}`).update({ "light.last": Date.now() });
                 if (snapshot?.data().api.name === "Philips Hue") {
                     const cred = snapshot?.data()?.api?.credentials;
                     if (!cred) return "Could not connect to light";

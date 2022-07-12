@@ -76,7 +76,7 @@ class _AppState extends State<App> {
                           .doc(
                               'users/${FirebaseAuth.instance.currentUser!.uid}')
                           .set({
-                        'light': {'name': 'Not selected', 'id': ''},
+                        'light': {'name': 'Not selected', 'id': '', 'last': 0},
                         'api': {'name': 'No services connected'},
                         'friends': [],
                         'permissions': [],
@@ -101,9 +101,9 @@ class _AppState extends State<App> {
                                 child: CircleAvatar(
                                   backgroundColor: Colors.grey[400],
                                   child: Text(
-                                    FirebaseAuth.instance.currentUser?.email
+                                    FirebaseAuth
+                                            .instance.currentUser!.displayName
                                             ?.substring(0, 2)
-                                            .split('@')[0]
                                             .toUpperCase() ??
                                         'HI',
                                     style: const TextStyle(
