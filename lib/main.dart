@@ -139,7 +139,11 @@ class _AppState extends State<App> {
             }
           }),
       theme: themeLight,
-      darkTheme: themeDark,
+      darkTheme: themeDark.copyWith(
+          textTheme: Theme.of(context).textTheme.apply(
+                bodyColor: Colors.white,
+                displayColor: Colors.white,
+              )),
     );
   }
 }

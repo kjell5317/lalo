@@ -19,18 +19,24 @@ var themeLight = ThemeData(
   ),
   outlinedButtonTheme: OutlinedButtonThemeData(
     style: ButtonStyle(
-      backgroundColor: MaterialStateProperty.all<Color>(Colors.orange),
-      foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-    ),
+        backgroundColor: MaterialStateProperty.all<Color>(Colors.orange),
+        foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+        padding: MaterialStateProperty.all<EdgeInsets>(
+          const EdgeInsets.all(20),
+        )),
   ),
 );
 
 var themeDark = themeLight.copyWith(
     scaffoldBackgroundColor: Colors.grey[900],
+    iconTheme: const IconThemeData(color: Colors.white),
     brightness: Brightness.dark,
     appBarTheme: themeLight.appBarTheme.copyWith(
       titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24),
     ),
+    inputDecorationTheme: const InputDecorationTheme(
+        border: OutlineInputBorder(),
+        labelStyle: TextStyle(color: Colors.white)),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       selectedItemColor: Colors.orange,
       backgroundColor: Colors.grey[900],
