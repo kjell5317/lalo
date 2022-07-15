@@ -4,11 +4,14 @@ import 'package:google_fonts/google_fonts.dart';
 var themeLight = ThemeData(
   brightness: Brightness.light,
   backgroundColor: Colors.white,
+  bottomSheetTheme: BottomSheetThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
   colorScheme: ThemeData().colorScheme.copyWith(primary: Colors.orange),
   fontFamily: GoogleFonts.roboto().fontFamily,
-  appBarTheme: const AppBarTheme(
+  appBarTheme: AppBarTheme(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       backgroundColor: Colors.orange,
-      titleTextStyle: TextStyle(color: Colors.white, fontSize: 24)),
+      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24)),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
     selectedItemColor: Colors.orange,
   ),
@@ -28,15 +31,19 @@ var themeLight = ThemeData(
 );
 
 var themeDark = themeLight.copyWith(
+    dialogBackgroundColor: Colors.grey[900],
+    bottomSheetTheme: themeLight.bottomSheetTheme.copyWith(
+      backgroundColor: Colors.grey[900],
+    ),
     scaffoldBackgroundColor: Colors.grey[900],
     iconTheme: const IconThemeData(color: Colors.white),
     brightness: Brightness.dark,
     appBarTheme: themeLight.appBarTheme.copyWith(
       titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24),
     ),
-    inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-        labelStyle: TextStyle(color: Colors.white)),
+    inputDecorationTheme: themeLight.inputDecorationTheme.copyWith(
+        border: const OutlineInputBorder(),
+        labelStyle: const TextStyle(color: Colors.white)),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       selectedItemColor: Colors.orange,
       backgroundColor: Colors.grey[900],

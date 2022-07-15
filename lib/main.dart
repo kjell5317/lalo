@@ -54,7 +54,14 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Leave a light on',
       routes: routes,
+      theme: themeLight,
+      darkTheme: themeDark.copyWith(
+          textTheme: Theme.of(context).textTheme.apply(
+                bodyColor: Colors.white,
+                displayColor: Colors.white,
+              )),
       home: StreamBuilder(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (BuildContext context, AsyncSnapshot<Object?> snapshotAuth) {
@@ -62,20 +69,17 @@ class _AppState extends State<App> {
               return const LoadingScreen();
             }
             if (snapshotAuth.hasData) {
+              user = FirebaseAuth.instance.currentUser;
+              userRef = FirebaseFirestore.instance.doc('users/${user!.uid}');
               return StreamBuilder(
-                  stream: FirebaseFirestore.instance
-                      .doc('users/${FirebaseAuth.instance.currentUser!.uid}')
-                      .snapshots(),
+                  stream: userRef?.snapshots(),
                   builder: (BuildContext context,
                       AsyncSnapshot<DocumentSnapshot> snapshotDb) {
                     if (!snapshotDb.hasData) {
                       return const LoadingScreen();
                     }
                     if (!snapshotDb.data!.exists) {
-                      FirebaseFirestore.instance
-                          .doc(
-                              'users/${FirebaseAuth.instance.currentUser!.uid}')
-                          .set({
+                      userRef?.set({
                         'light': {'name': 'Not selected', 'id': '', 'last': 0},
                         'api': {'name': 'No services connected'},
                         'friends': [],
@@ -84,8 +88,7 @@ class _AppState extends State<App> {
                       }, SetOptions(merge: true));
                       return const LoadingScreen();
                     } else {
-                      if (FirebaseAuth.instance.currentUser!.displayName ==
-                          null) {
+                      if (user?.displayName == null) {
                         return const NamePage();
                       }
                       return Scaffold(
@@ -101,8 +104,7 @@ class _AppState extends State<App> {
                                 child: CircleAvatar(
                                   backgroundColor: Colors.grey[400],
                                   child: Text(
-                                    FirebaseAuth
-                                            .instance.currentUser!.displayName
+                                    user!.displayName
                                             ?.substring(0, 2)
                                             .toUpperCase() ??
                                         'HI',
@@ -138,12 +140,6 @@ class _AppState extends State<App> {
               return const LoginPage();
             }
           }),
-      theme: themeLight,
-      darkTheme: themeDark.copyWith(
-          textTheme: Theme.of(context).textTheme.apply(
-                bodyColor: Colors.white,
-                displayColor: Colors.white,
-              )),
     );
   }
 }

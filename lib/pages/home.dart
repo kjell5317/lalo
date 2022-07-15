@@ -18,14 +18,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final Stream<DocumentSnapshot> _userStream = FirebaseFirestore.instance
-      .collection('users')
-      .doc(FirebaseAuth.instance.currentUser!.uid)
-      .snapshots();
-
   Future<void> _blink(Map<String, dynamic> user) async {
-    HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('blink');
-    final resp = await callable.call(<String, String>{
+    var resp = await FirebaseFunctions.instance
+        .httpsCallable('blink')
+        .call(<String, String>{
       'userId': user['uid'],
       'userName': user['name'],
       'me': FirebaseAuth.instance.currentUser!.uid,
@@ -36,12 +32,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _createLink() async {
-    DocumentReference ref =
+    DocumentReference linkRef =
         FirebaseFirestore.instance.collection('links').doc();
     var body = {
       'dynamicLinkInfo': {
         'domainUriPrefix': 'https://app-lalo.tk/link',
-        'link': 'https://lalo-2605.web.app/?id=${ref.id}',
+        'link': 'https://app-lalo.tk/?id=${linkRef.id}',
         'androidInfo': {'androidPackageName': 'de.kjellhanken.lalo'},
       },
       'suffix': {'option': 'UNGUESSABLE'}
@@ -52,10 +48,8 @@ class _HomePageState extends State<HomePage> {
         body: jsonEncode(body));
     if (res.statusCode == 200) {
       Share.share(jsonDecode(res.body)['shortLink']).then((_) => {
-            ref.set({
-              'senderId': FirebaseAuth.instance.currentUser!.uid,
-              'senderName': FirebaseAuth.instance.currentUser!.displayName
-            })
+            linkRef
+                .set({'senderId': user!.uid, 'senderName': user!.displayName})
           });
     } else {
       Fluttertoast.showToast(
@@ -73,9 +67,7 @@ class _HomePageState extends State<HomePage> {
         .then((data) {
       senderId = data['senderId'];
       if (senderId == null) return;
-      FirebaseFirestore.instance
-          .doc('users/${FirebaseAuth.instance.currentUser!.uid}')
-          .update({
+      FirebaseFirestore.instance.doc('users/${user!.uid}').update({
         'permissions': FieldValue.arrayUnion([senderId])
       });
     });
@@ -84,19 +76,15 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('accept');
-    final resp = await callable.call(<String, String>{
+    final resp = await FirebaseFunctions.instance
+        .httpsCallable('accept')
+        .call(<String, String>{
       'senderId': senderId!,
-      'friendId': FirebaseAuth.instance.currentUser!.uid,
-      'friendName': FirebaseAuth.instance.currentUser!.displayName ?? ''
+      'friendId': user!.uid,
+      'friendName': user!.displayName ?? '',
     });
     FirebaseFirestore.instance.doc('links/$initialLink').delete();
     Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
-    initialLink = null;
-  }
-
-  void _deny() {
-    FirebaseFirestore.instance.doc('links/$initialLink').delete();
     initialLink = null;
   }
 
@@ -108,20 +96,19 @@ class _HomePageState extends State<HomePage> {
         DocumentSnapshot<Map<String, dynamic>> link =
             await FirebaseFirestore.instance.doc('links/$initialLink').get();
         if (link.exists) {
-          DocumentSnapshot<Map<String, dynamic>> perm = await FirebaseFirestore
-              .instance
-              .doc('users/${FirebaseAuth.instance.currentUser!.uid}')
-              .get();
-          if (link['senderId'] == FirebaseAuth.instance.currentUser!.uid) {
-            _deny();
+          DocumentSnapshot<Object?> data = await userRef!.get();
+          if (link['senderId'] == user!.uid) {
+            FirebaseFirestore.instance.doc('links/$initialLink').delete();
+            initialLink = null;
             Fluttertoast.showToast(
                 msg: 'You can\'t be friends with yourself',
                 timeInSecForIosWeb: 3);
-          } else if (perm['permissions'].contains(link['senderId'])) {
-            _deny();
+          } else if (data['permissions'].contains(link['senderId'])) {
+            FirebaseFirestore.instance.doc('links/$initialLink').delete();
+            initialLink = null;
             Fluttertoast.showToast(
                 msg: 'You are already friends', timeInSecForIosWeb: 3);
-          } else if (perm['light']['name'] == 'Not selected') {
+          } else if (data['light']['name'] == 'Not selected') {
             Fluttertoast.showToast(
                 msg: 'Select a light before you can accept the request',
                 timeInSecForIosWeb: 3);
@@ -204,7 +191,10 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   onPressed: () {
-                    _deny();
+                    FirebaseFirestore.instance
+                        .doc('links/$initialLink')
+                        .delete();
+                    initialLink = null;
                     Navigator.pop(context);
                   },
                 ),
@@ -219,7 +209,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<dynamic>(
-        stream: _userStream,
+        stream: userRef?.snapshots(),
         builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
           if (snapshot.hasData) {
             if (waiting &&
@@ -231,7 +221,6 @@ class _HomePageState extends State<HomePage> {
             List<Widget> tiles = snapshot.data['friends']
                 .map((i) {
                   // TODO: Animation
-                  // AnimationController(vsync: this),
                   return InkWell(
                       onTap: () {
                         _blink(i);

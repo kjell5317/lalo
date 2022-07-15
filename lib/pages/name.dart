@@ -60,7 +60,7 @@ class _NamePageState extends State<NamePage> {
                     return null;
                   },
                   decoration: const InputDecoration(
-                      border: OutlineInputBorder(), hintText: 'Your name'),
+                      border: OutlineInputBorder(), labelText: 'Your name'),
                 ))),
         Padding(
             padding: const EdgeInsets.all(15.0),
