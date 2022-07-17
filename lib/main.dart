@@ -24,7 +24,9 @@ void main() async {
   );
   analytics = FirebaseAnalytics.instance;
   if (!kIsWeb) {
-    initialLink = (await FirebaseDynamicLinks.instance.getInitialLink())?.link;
+    initialLink = await FirebaseDynamicLinks.instance
+        .getInitialLink()
+        .then((value) => Uri.parse(value?.link.queryParameters['id'] ?? ''));
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
     MobileAds.instance.initialize();
   } else if (Uri.base.queryParameters['id'] != null) {

@@ -201,8 +201,7 @@ class _MorePageState extends State<MorePage> {
                                 apis.insert(
                                     0,
                                     Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 15.0),
+                                      padding: const EdgeInsets.all(15.0),
                                       child: Text('Choose a Light to blink',
                                           style: Theme.of(context)
                                               .textTheme

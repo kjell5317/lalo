@@ -1,7 +1,9 @@
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -18,6 +20,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  BannerAd? _ad;
+  final Map<String, Color> _color = {};
   Future<void> _blink(Map<String, dynamic> user) async {
     var resp = await FirebaseFunctions.instance
         .httpsCallable('blink')
@@ -47,10 +51,11 @@ class _HomePageState extends State<HomePage> {
             'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAUKHRQtdn_rxwt4wGRzzMHVqrDLJSKND0'),
         body: jsonEncode(body));
     if (res.statusCode == 200) {
-      Share.share(jsonDecode(res.body)['shortLink']).then((_) => {
-            linkRef
-                .set({'senderId': user!.uid, 'senderName': user!.displayName})
-          });
+      Share.share(jsonDecode(res.body)['shortLink']).then((_) {
+        linkRef.set({'senderId': user!.uid, 'senderName': user!.displayName});
+        analytics!.logShare(
+            contentType: 'Friend Request', itemId: user!.uid, method: 'link');
+      });
     } else {
       Fluttertoast.showToast(
           msg: res.statusCode.toString() + ': Could not create link',
@@ -86,42 +91,6 @@ class _HomePageState extends State<HomePage> {
     FirebaseFirestore.instance.doc('links/$initialLink').delete();
     Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
     initialLink = null;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (initialLink != null && !waiting) {
-        DocumentSnapshot<Map<String, dynamic>> link =
-            await FirebaseFirestore.instance.doc('links/$initialLink').get();
-        if (link.exists) {
-          DocumentSnapshot<Object?> data = await userRef!.get();
-          if (link['senderId'] == user!.uid) {
-            FirebaseFirestore.instance.doc('links/$initialLink').delete();
-            initialLink = null;
-            Fluttertoast.showToast(
-                msg: 'You can\'t be friends with yourself',
-                timeInSecForIosWeb: 3);
-          } else if (data['permissions'].contains(link['senderId'])) {
-            FirebaseFirestore.instance.doc('links/$initialLink').delete();
-            initialLink = null;
-            Fluttertoast.showToast(
-                msg: 'You are already friends', timeInSecForIosWeb: 3);
-          } else if (data['light']['name'] == 'Not selected') {
-            Fluttertoast.showToast(
-                msg: 'Select a light before you can accept the request',
-                timeInSecForIosWeb: 3);
-            waiting = true;
-          } else {
-            _modal();
-          }
-        } else {
-          initialLink = null;
-          Fluttertoast.showToast(msg: 'Invalid link', timeInSecForIosWeb: 3);
-        }
-      }
-    });
   }
 
   void _modal() async {
@@ -206,109 +175,214 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _changeColor(String uid) async {
+    setState(() {
+      _color[uid] = Colors.lightBlueAccent;
+    });
+    await Future.delayed(const Duration(seconds: 30));
+    setState(() {
+      _color[uid] = Colors.orange;
+    });
+  }
+
+  void _link() async {
+    if (initialLink != null && !waiting) {
+      DocumentSnapshot<Map<String, dynamic>> link =
+          await FirebaseFirestore.instance.doc('links/$initialLink').get();
+      if (link.exists) {
+        DocumentSnapshot<Object?> data = await userRef!.get();
+        if (link['senderId'] == user!.uid) {
+          FirebaseFirestore.instance.doc('links/$initialLink').delete();
+          initialLink = null;
+          Fluttertoast.showToast(
+              msg: 'You can\'t be friends with yourself',
+              timeInSecForIosWeb: 3);
+        } else if (data['permissions'].contains(link['senderId'])) {
+          FirebaseFirestore.instance.doc('links/$initialLink').delete();
+          initialLink = null;
+          Fluttertoast.showToast(
+              msg: 'You are already friends', timeInSecForIosWeb: 3);
+        } else if (data['light']['name'] == 'Not selected') {
+          Fluttertoast.showToast(
+              msg: 'Select a light before you can accept the request',
+              timeInSecForIosWeb: 3);
+          waiting = true;
+        } else {
+          _modal();
+        }
+      } else {
+        initialLink = null;
+        Fluttertoast.showToast(msg: 'Invalid link', timeInSecForIosWeb: 3);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _ad?.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      BannerAd(
+        adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+        size: AdSize.banner,
+        request: const AdRequest(),
+        listener: BannerAdListener(onAdLoaded: (ad) {
+          setState(() {
+            _ad = ad as BannerAd;
+          });
+        }, onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          ad.dispose();
+        }),
+      ).load();
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _link();
+      if (!kIsWeb) {
+        FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
+          initialLink = Uri.parse(dynamicLink.link.queryParameters['id'] ?? '');
+          _link();
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<dynamic>(
-        stream: userRef?.snapshots(),
-        builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-          if (snapshot.hasData) {
-            if (waiting &&
-                initialLink != null &&
-                snapshot.data['light']['name'] != 'Not selected') {
-              _modal();
-              waiting = false;
-            }
-            List<Widget> tiles = snapshot.data['friends']
-                .map((i) {
-                  // TODO: Animation
-                  return InkWell(
-                      onTap: () {
-                        _blink(i);
-                      },
-                      child: AspectRatio(
-                        aspectRatio: 1.0,
-                        child: Container(
-                          padding: const EdgeInsets.all(10.0),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(i['name'],
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      color: Colors.white,
-                                    )),
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Icon(
-                                  Icons.lightbulb,
-                                  color: Colors.white,
-                                  size: 28,
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ));
-                })
-                .toList()
-                .cast<Widget>();
-            if (snapshot.data['friends'].length < 10) {
-              tiles.add(InkWell(
-                  onTap: () {
-                    _createLink();
-                  },
-                  child: AspectRatio(
-                    aspectRatio: 1.0,
-                    child: Container(
-                      padding: const EdgeInsets.all(10.0),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[400],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'Add a friend',
-                              textAlign: TextAlign.center,
-                              style:
-                                  TextStyle(fontSize: 24, color: Colors.white),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  )));
-            }
-            return GridView.count(
-              primary: false,
-              padding: const EdgeInsets.all(20),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              crossAxisCount: 2,
-              children: tiles,
-            );
+    return Column(
+      children: [
+        Builder(builder: (context) {
+          if (!kIsWeb && _ad != null) {
+            return Padding(
+                padding: const EdgeInsets.only(top: 20.0),
+                child: Container(
+                  alignment: Alignment.center,
+                  child: AdWidget(ad: _ad!),
+                  width: _ad!.size.width.toDouble(),
+                  height: _ad!.size.height.toDouble(),
+                ));
+          } else {
+            return const SizedBox.shrink();
           }
-          return const LoadingScreen();
-        });
+        }),
+        Expanded(
+          child: Builder(builder: (context) {
+            return StreamBuilder<dynamic>(
+                stream: userRef?.snapshots(),
+                builder:
+                    (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                  if (snapshot.hasData) {
+                    if (waiting &&
+                        initialLink != null &&
+                        snapshot.data['light']['name'] != 'Not selected') {
+                      _modal();
+                      waiting = false;
+                    }
+                    List<Widget> tiles = snapshot.data['friends']
+                        .map((i) {
+                          if (!_color.containsKey(i['uid'])) {
+                            _color[i['uid']] = Colors.orange;
+                          }
+                          // print(_color[i['uid']]);
+                          return InkWell(
+                              onTap: () {
+                                if (_color[i['uid']] == Colors.orange) {
+                                  _changeColor(i['uid']);
+                                  _blink(i);
+                                }
+                              },
+                              child: AspectRatio(
+                                aspectRatio: 1.0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(10.0),
+                                  decoration: BoxDecoration(
+                                    color: _color[i['uid']],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(i['name'],
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              color: Colors.white,
+                                            )),
+                                      ),
+                                      const Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Icon(
+                                          Icons.lightbulb,
+                                          color: Colors.white,
+                                          size: 28,
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ));
+                        })
+                        .toList()
+                        .cast<Widget>();
+                    if (snapshot.data['friends'].length < 10) {
+                      tiles.add(InkWell(
+                          onTap: () {
+                            _createLink();
+                          },
+                          child: AspectRatio(
+                            aspectRatio: 1.0,
+                            child: Container(
+                              padding: const EdgeInsets.all(10.0),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[400],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Text(
+                                      'Add a friend',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: 24, color: Colors.white),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Icon(
+                                      Icons.add,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          )));
+                    }
+                    return GridView.count(
+                      primary: false,
+                      padding: const EdgeInsets.all(20),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      crossAxisCount: 2,
+                      children: tiles,
+                    );
+                  }
+                  return const LoadingScreen();
+                });
+          }),
+        ),
+      ],
+    );
   }
 }

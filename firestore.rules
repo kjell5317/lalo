@@ -9,5 +9,8 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
       allow read, delete: if request.auth != null;
     }
+    match /feedback/{id} {
+    	allow create: if request.auth != null;
+    }
   }
 }
