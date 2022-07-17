@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:lalo/pages/loading.dart';
 import 'package:lalo/services/services.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -15,6 +16,7 @@ class MorePage extends StatefulWidget {
 }
 
 class _MorePageState extends State<MorePage> {
+  BannerAd? _ad;
   final String _url =
       'https://api.meethue.com//v2/oauth2/authorize?client_id=wq9lMKlb0LypJeExHayCZgXLVQGPuInF&response_type=code&state=${user!.uid}';
   var _serviceCaption = 'Connect Philips Hue';
@@ -39,151 +41,205 @@ class _MorePageState extends State<MorePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<dynamic>(
-        stream: userRef?.snapshots(),
-        builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-          if (snapshot.hasData) {
-            if (snapshot.data['light']['name'] == null) {
-              snapshot.data['light']['name'] = 'Not selected';
-            }
-            if (snapshot.data?['api']['name'] == null) {
-              snapshot.data['api']['name'] = 'No services connected';
-            } else if (snapshot.data['api']['name'] == 'Philips Hue') {
-              _serviceCaption = 'Remove Philips Hue';
-            }
+  void dispose() {
+    super.dispose();
+    _ad?.dispose();
+  }
 
-            return SettingsList(
-              contentPadding: const EdgeInsets.all(10),
-              lightTheme:
-                  const SettingsThemeData(settingsListBackground: Colors.white),
-              darkTheme:
-                  SettingsThemeData(settingsListBackground: Colors.grey[900]),
-              sections: [
-                SettingsSection(
-                  tiles: <SettingsTile>[
-                    SettingsTile.switchTile(
-                        leading: const Icon(Icons.do_not_disturb),
-                        initialValue: snapshot.data['dnd'],
-                        onToggle: (value) {
-                          setState(() {
-                            userRef?.update({'dnd': value});
-                          });
-                        },
-                        title: const Text('Do Not Disturb')),
-                    // Services
-                    SettingsTile.navigation(
-                        leading: const Icon(Icons.home),
-                        title: const Text('Services'),
-                        value: Text(snapshot.data['api']['name']),
-                        onPressed: (context) {
-                          // Service Modal
-                          showModalBottomSheet<void>(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return SizedBox(
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: <Widget>[
-                                      const Padding(
-                                        padding: EdgeInsets.all(15.0),
-                                        child: Icon(Icons.lightbulb,
-                                            color: Colors.orange, size: 40.0),
-                                      ),
-                                      Padding(
-                                          padding: const EdgeInsets.all(15.0),
-                                          child: Text(
-                                            'Connect a service to let your friends blink your light',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headline5,
-                                            textAlign: TextAlign.center,
-                                          )),
-                                      Padding(
-                                        padding: const EdgeInsets.all(15.0),
-                                        child: ElevatedButton(
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(10.0),
-                                            child: Text(_serviceCaption,
-                                                style: const TextStyle(
-                                                    fontSize: 18)),
-                                          ),
-                                          onPressed: () => _launchURL(),
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      BannerAd(
+        adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+        size: AdSize.banner,
+        request: const AdRequest(),
+        listener: BannerAdListener(onAdLoaded: (ad) {
+          setState(() {
+            _ad = ad as BannerAd;
+          });
+        }, onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          ad.dispose();
+        }),
+      ).load();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Builder(builder: (context) {
+          if (!kIsWeb && _ad != null) {
+            return Padding(
+                padding: const EdgeInsets.only(top: 20.0),
+                child: Container(
+                  alignment: Alignment.center,
+                  child: AdWidget(ad: _ad!),
+                  width: _ad!.size.width.toDouble(),
+                  height: _ad!.size.height.toDouble(),
+                ));
+          } else {
+            return const SizedBox.shrink();
+          }
+        }),
+        Expanded(
+          child: StreamBuilder<dynamic>(
+              stream: userRef?.snapshots(),
+              builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                if (snapshot.hasData) {
+                  if (snapshot.data['light']['name'] == null) {
+                    snapshot.data['light']['name'] = 'Not selected';
+                  }
+                  if (snapshot.data?['api']['name'] == null) {
+                    snapshot.data['api']['name'] = 'No services connected';
+                  } else if (snapshot.data['api']['name'] == 'Philips Hue') {
+                    _serviceCaption = 'Remove Philips Hue';
+                  }
+
+                  return SettingsList(
+                    contentPadding: const EdgeInsets.all(10),
+                    lightTheme: const SettingsThemeData(
+                        settingsListBackground: Colors.white),
+                    darkTheme: SettingsThemeData(
+                        settingsListBackground: Colors.grey[900]),
+                    sections: [
+                      SettingsSection(
+                        tiles: <SettingsTile>[
+                          SettingsTile.switchTile(
+                              leading: const Icon(Icons.do_not_disturb),
+                              initialValue: snapshot.data['dnd'],
+                              onToggle: (value) {
+                                setState(() {
+                                  userRef?.update({'dnd': value});
+                                });
+                              },
+                              title: const Text('Do Not Disturb')),
+                          // Services
+                          SettingsTile.navigation(
+                              leading: const Icon(Icons.home),
+                              title: const Text('Services'),
+                              value: Text(snapshot.data['api']['name']),
+                              onPressed: (context) {
+                                // Service Modal
+                                showModalBottomSheet<void>(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return SizedBox(
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: <Widget>[
+                                            const Padding(
+                                              padding: EdgeInsets.all(15.0),
+                                              child: Icon(Icons.lightbulb,
+                                                  color: Colors.orange,
+                                                  size: 40.0),
+                                            ),
+                                            Padding(
+                                                padding:
+                                                    const EdgeInsets.all(15.0),
+                                                child: Text(
+                                                  'Connect a service to let your friends blink your light',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .headline5,
+                                                  textAlign: TextAlign.center,
+                                                )),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(15.0),
+                                              child: ElevatedButton(
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(
+                                                      10.0),
+                                                  child: Text(_serviceCaption,
+                                                      style: const TextStyle(
+                                                          fontSize: 18)),
+                                                ),
+                                                onPressed: () => _launchURL(),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }),
+                                    );
+                                  },
+                                );
+                              }),
 
-                    // Light
-                    SettingsTile.navigation(
-                      leading: const Icon(Icons.lightbulb),
-                      title: const Text('Light'),
-                      value: Text(snapshot.data['light']['name']),
-                      onPressed: (context) {
-                        // Light Modal
-                        if (snapshot.data['api']['name'] !=
-                            'No services connected') {
-                          List<Widget> apis = snapshot.data['api']['lights']
-                              .map((i) => ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                      fixedSize: const Size(200, 35)),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      i['name'],
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                  onPressed: () => {
-                                        Navigator.pop(context),
-                                        userRef?.set({'light': i},
-                                            SetOptions(merge: true))
-                                      }))
-                              .toList()
-                              .cast<Widget>();
-                          apis.insert(
-                              0,
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 15.0),
-                                child: Text('Choose a Light to blink',
-                                    style:
-                                        Theme.of(context).textTheme.headline5),
-                              ));
-                          showModalBottomSheet<void>(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return SizedBox(
-                                child: Center(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: apis,
-                                    ),
-                                  ),
-                                ),
-                              );
+                          // Light
+                          SettingsTile.navigation(
+                            leading: const Icon(Icons.lightbulb),
+                            title: const Text('Light'),
+                            value: Text(snapshot.data['light']['name']),
+                            onPressed: (context) {
+                              // Light Modal
+                              if (snapshot.data['api']['name'] !=
+                                  'No services connected') {
+                                List<Widget> apis = snapshot.data['api']
+                                        ['lights']
+                                    .map((i) => ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                            fixedSize: const Size(200, 35)),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                            i['name'],
+                                            style:
+                                                const TextStyle(fontSize: 16),
+                                          ),
+                                        ),
+                                        onPressed: () => {
+                                              Navigator.pop(context),
+                                              userRef?.set({'light': i},
+                                                  SetOptions(merge: true))
+                                            }))
+                                    .toList()
+                                    .cast<Widget>();
+                                apis.insert(
+                                    0,
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 15.0),
+                                      child: Text('Choose a Light to blink',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headline5),
+                                    ));
+                                showModalBottomSheet<void>(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return SizedBox(
+                                      child: Center(
+                                        child: SingleChildScrollView(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: apis,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              } else {
+                                Fluttertoast.showToast(
+                                    msg: 'No services connected',
+                                    timeInSecForIosWeb: 3);
+                              }
                             },
-                          );
-                        } else {
-                          Fluttertoast.showToast(
-                              msg: 'No services connected',
-                              timeInSecForIosWeb: 3);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            );
-          }
-          return const LoadingScreen();
-        });
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+                return const LoadingScreen();
+              }),
+        ),
+      ],
+    );
   }
 }

@@ -16,40 +16,33 @@ db.settings({ ignoreUndefinedProperties: true })
 // Create credetials
 export const callback = functions.https.onRequest((req, res) => {
     const user = req.query.state;
-    const authorizationCode: string = req.query.code!.toString();
+    const authorizationCode = req.query.code?.toString();
     if (user == null || authorizationCode == null || !db.doc(`users/${user}`).get().then((snapshot: any) => snapshot.exists)) {
         res.send("Error!")
     }
-    if (authorizationCode) {
-        remoteBootstrap.connectWithCode(authorizationCode)
-            .then((api: Api) => {
-                const remoteCredentials = api.remote!.getRemoteAccessCredentials();
-                api.lights.getAll().then((allLights: any) => {
-                    const lights = allLights.map((light: any) => { return { "name": light.name, "id": light.id } });
-                    db.doc(`users/${user}`).set({
-                        "api": {
-                            "name": "Philips Hue", "credentials": remoteCredentials, "lights": lights
-                        },
-                    }, { merge: true })
-                        .then(() => res.send(`
-                            <script>window.close();</script>
-                            <h1 style="text-align: center; vertical-align: middle;">
-                                You can close this tab now.
-                            </h1>
-                        `))
-                        .catch((e: any) => {
-                            console.error(e);
-                            res.send("Error!");
-                        });
-                }).catch((e: any) => {
-                    console.error(e);
-                    res.send("Error!");
-                });
+    remoteBootstrap.connectWithCode(authorizationCode!)
+        .then((api: Api) => {
+            const remoteCredentials = api.remote!.getRemoteAccessCredentials();
+            api.lights.getAll().then((allLights: any) => {
+                const lights = allLights.map((light: any) => { return { "name": light.name, "id": light.id } });
+                db.doc(`users/${user}`).set({
+                    "api": {
+                        "name": "Philips Hue", "credentials": remoteCredentials, "lights": lights
+                    },
+                }, { merge: true })
+                    .then(() => res.redirect("https://app-lalo.tk/link/open"))
+                    .catch((e: any) => {
+                        console.error(e);
+                        res.send("Can not connect to database!");
+                    });
             }).catch((e: any) => {
                 console.error(e);
-                res.send("Error!");
+                res.send("Can not get lights!");
             });
-    } else res.send("Error!");
+        }).catch((e: any) => {
+            console.error(e);
+            res.send("Can not connect to Philips Hue!");
+        });
 });
 // TODO: renew credentials
 // Blink light

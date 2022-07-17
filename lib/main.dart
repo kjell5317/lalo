@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-// import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:lalo/pages/name.dart';
 
 import 'package:lalo/services/services.dart';
@@ -21,10 +22,11 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
-  // FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+  analytics = FirebaseAnalytics.instance;
   if (!kIsWeb) {
     initialLink = (await FirebaseDynamicLinks.instance.getInitialLink())?.link;
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+    MobileAds.instance.initialize();
   } else if (Uri.base.queryParameters['id'] != null) {
     initialLink = Uri.parse(Uri.base.queryParameters['id']!);
   }
@@ -79,6 +81,8 @@ class _AppState extends State<App> {
                       return const LoadingScreen();
                     }
                     if (!snapshotDb.data!.exists) {
+                      analytics!.logSignUp(
+                          signUpMethod: user!.providerData[1].providerId);
                       userRef?.set({
                         'light': {'name': 'Not selected', 'id': '', 'last': 0},
                         'api': {'name': 'No services connected'},

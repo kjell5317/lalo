@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutterfire_ui/auth.dart';
+import 'package:lalo/services/globals.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -10,6 +11,7 @@ class LoginPage extends StatelessWidget {
       actions: [
         AuthStateChangeAction<SignedIn>((context, value) {
           Navigator.of(context).pushReplacementNamed('/home');
+          analytics!.logLogin();
         })
       ],
       providerConfigs: const [
