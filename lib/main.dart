@@ -84,7 +84,7 @@ class _AppState extends State<App> {
                     }
                     if (!snapshotDb.data!.exists) {
                       analytics!.logSignUp(
-                          signUpMethod: user!.providerData[1].providerId);
+                          signUpMethod: user!.providerData[0].providerId);
                       userRef?.set({
                         'light': {'name': 'Not selected', 'id': '', 'last': 0},
                         'api': {'name': 'No services connected'},

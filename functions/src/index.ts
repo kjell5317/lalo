@@ -55,8 +55,8 @@ export const blink = functions.https.onCall((data) => {
                 if (snapshot.data().dnd === true) return;
                 if (Date.now() - snapshot.data().light.last < 30 * 1000) return;
                 db.doc(`users/${data.userId}`).update({ "light.last": Date.now() });
-                if (snapshot?.data().api.name === "Philips Hue") {
-                    const cred = snapshot?.data()?.api?.credentials;
+                if (snapshot.data().api.name === "Philips Hue") {
+                    const cred = snapshot.data().api.credentials;
                     if (!cred) return "Could not connect to light";
                     return remoteBootstrap.connectWithTokens(
                         cred.tokens.access.value, cred.tokens.refresh.value, cred.username)
@@ -74,7 +74,7 @@ export const blink = functions.https.onCall((data) => {
                             console.error(e);
                             return "Could not connect to light";
                         });
-                } else return "Wrong API";
+                } else return "Could not connect to light";
 
             } else {
                 return removeFriend(data)
@@ -131,5 +131,38 @@ export const accept = functions.https.onCall((data) => {
     }).then(() => "Request accepted").catch((e: any) => {
         console.error(e);
         return "Request could not be accepted";
+    });
+});
+
+export const refresh = functions.pubsub.schedule("1, 7, 13, 19, 25, 31 of month 00:00").timeZone("Europe/Berlin").onRun((context) => {
+    return db.collection("users")
+        .where("api.credentials.tokens.access.expiresAt", "<", Date.now() + 6 * 24 * 60 * 60 * 1000)
+        .get().then((result) => {
+            result.forEach((user) => {
+                db.doc(`users/${user.id}`).get().then((snapshot: any) => {
+                    if (snapshot.exists) {
+                        const cred = snapshot.data().api.credentials;
+                        remoteBootstrap.connectWithTokens(cred.tokens.access.value,
+                            cred.tokens.refresh.value,
+                            cred.username
+                        ).then((api: Api) => {
+                            api.remote?.refreshTokens().then((refreshedTokens) => {
+                                db.doc(`users/${user.id}`).update({ "api.credentials.tokens": refreshedTokens })
+                                    .catch((e) => {
+                                        console.error(e);
+                                    });
+                            }).catch((e) => {
+                                console.error(e);
+                            });
+                        }).catch((e) => {
+                            console.error(e);
+                        });
+                    }
+                }).catch((e) => {
+                    console.error(e);
+                });
+            });
+    }).catch((e) => {
+        console.error(e);
     });
 });
