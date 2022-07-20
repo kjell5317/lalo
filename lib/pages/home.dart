@@ -32,7 +32,9 @@ class _HomePageState extends State<HomePage> {
     });
     if (resp.data != null) {
       Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
-      _color[_user['uid']] = Colors.orange;
+      setState(() {
+        _color[_user['uid']] = Colors.orange;
+      });
     }
   }
 
@@ -229,7 +231,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     if (!kIsWeb) {
       BannerAd(
-        adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+        adUnitId: 'ca-app-pub-1021570699948608/9379851670',
         size: AdSize.banner,
         request: const AdRequest(),
         listener: BannerAdListener(onAdLoaded: (ad) {

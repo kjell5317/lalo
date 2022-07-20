@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:lalo/services/services.dart';
 
 class NamePage extends StatefulWidget {
   const NamePage({Key? key}) : super(key: key);
@@ -51,6 +51,7 @@ class _NamePageState extends State<NamePage> {
             child: Form(
                 key: _formKey,
                 child: TextFormField(
+                  keyboardType: TextInputType.name,
                   controller: _controller,
                   textInputAction: TextInputAction.done,
                   validator: (String? text) {
@@ -67,8 +68,7 @@ class _NamePageState extends State<NamePage> {
             child: ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    await FirebaseAuth.instance.currentUser!
-                        .updateDisplayName(_controller.text);
+                    await user!.updateDisplayName(_controller.text);
                     Navigator.of(context).pushReplacementNamed('/home');
                   }
                 },

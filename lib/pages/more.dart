@@ -5,6 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:lalo/pages/loading.dart';
 import 'package:lalo/services/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -17,6 +18,8 @@ class MorePage extends StatefulWidget {
 
 class _MorePageState extends State<MorePage> {
   BannerAd? _ad;
+  String? version;
+  String? buildNumber;
   final String _url =
       'https://api.meethue.com//v2/oauth2/authorize?client_id=wq9lMKlb0LypJeExHayCZgXLVQGPuInF&response_type=code&state=${user!.uid}';
   var _serviceCaption = 'Connect Philips Hue';
@@ -49,9 +52,15 @@ class _MorePageState extends State<MorePage> {
   @override
   void initState() {
     super.initState();
+    PackageInfo.fromPlatform().then(
+      (value) {
+        version = value.version;
+        buildNumber = value.buildNumber;
+      },
+    );
     if (!kIsWeb) {
       BannerAd(
-        adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+        adUnitId: 'ca-app-pub-1021570699948608/9379851670',
         size: AdSize.banner,
         request: const AdRequest(),
         listener: BannerAdListener(onAdLoaded: (ad) {
@@ -233,6 +242,24 @@ class _MorePageState extends State<MorePage> {
                           ),
                         ],
                       ),
+                      SettingsSection(
+                        tiles: [
+                          // Feedback
+                          SettingsTile.navigation(
+                            title: const Text('Feedback'),
+                            leading: const Icon(Icons.feedback),
+                            value: const Text('Please provide your feedback'),
+                            onPressed: (context) =>
+                                Navigator.pushNamed(context, '/feedback'),
+                          ),
+                          // Info
+                          SettingsTile.navigation(
+                              title: const Text('Info'),
+                              leading: const Icon(Icons.info),
+                              value: Text('$version+$buildNumber'),
+                              onPressed: (context) {})
+                        ],
+                      )
                     ],
                   );
                 }
