@@ -58,7 +58,7 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Leave a light on',
+      title: 'Leave a Light on',
       routes: routes,
       theme: themeLight,
       darkTheme: themeDark.copyWith(

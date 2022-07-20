@@ -109,6 +109,7 @@ class _MorePageState extends State<MorePage> {
                           SettingsTile.switchTile(
                               leading: const Icon(Icons.do_not_disturb),
                               initialValue: snapshot.data['dnd'],
+                              activeSwitchColor: Colors.lightBlueAccent,
                               onToggle: (value) {
                                 setState(() {
                                   userRef?.update({'dnd': value});
