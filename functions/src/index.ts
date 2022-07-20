@@ -51,9 +51,8 @@ export const blink = functions.https.onCall((data) => {
     return db.doc(`users/${data.userId}`).get().then((snapshot: any) => {
         if (snapshot.exists) {
             if (snapshot.data().permissions.includes(data.me)) {
-                if (snapshot?.data().api.name === "No services connected") return "Friend has no light";
-                if (snapshot.data().dnd === true) return;
-                if (Date.now() - snapshot.data().light.last < 30 * 1000) return;
+                if (snapshot.data().api.name === "No services connected") return "Friend has no light";
+                if (snapshot.data().dnd === true || Date.now() - snapshot.data().light.last < 30 * 1000) return;
                 db.doc(`users/${data.userId}`).update({ "light.last": Date.now() });
                 if (snapshot.data().api.name === "Philips Hue") {
                     const cred = snapshot.data().api.credentials;
@@ -84,7 +83,7 @@ export const blink = functions.https.onCall((data) => {
         }
     }).catch((e: any) => {
         console.error(e);
-        return removeFriend(data);
+        return "Unknown Error";
     });
 
     /**
@@ -116,7 +115,7 @@ export const blink = functions.https.onCall((data) => {
             console.error(e);
         }
         if (++x < 4) {
-            setTimeout(blinkLight, 2000, api, id, !value);
+            setTimeout(blinkLight, 1000, api, id, !value);
         }
     }
 });
@@ -147,7 +146,7 @@ export const refresh = functions.pubsub.schedule("1, 7, 13, 19, 25, 31 of month 
                             cred.username
                         ).then((api: Api) => {
                             api.remote?.refreshTokens().then((refreshedTokens) => {
-                                db.doc(`users/${user.id}`).update({ "api.credentials.tokens": refreshedTokens })
+                                db.doc(`users/${user.id}`).update({ "api.credentials.tokens.access": refreshedTokens.accessToken, "api.credentials.tokens.refresh": refreshedTokens.refreshToken })
                                     .catch((e) => {
                                         console.error(e);
                                     });

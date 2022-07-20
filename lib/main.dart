@@ -105,7 +105,6 @@ class _AppState extends State<App> {
                               padding: const EdgeInsets.all(8.0),
                               child: InkWell(
                                 onTap: () =>
-                                    // TODO: ProfilePage
                                     Navigator.pushNamed(context, '/profile'),
                                 child: CircleAvatar(
                                   backgroundColor: Colors.grey[400],

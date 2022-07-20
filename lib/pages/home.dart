@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -22,16 +21,18 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   BannerAd? _ad;
   final Map<String, Color> _color = {};
-  Future<void> _blink(Map<String, dynamic> user) async {
+
+  Future<void> _blink(Map<String, dynamic> _user) async {
     var resp = await FirebaseFunctions.instance
         .httpsCallable('blink')
         .call(<String, String>{
-      'userId': user['uid'],
-      'userName': user['name'],
-      'me': FirebaseAuth.instance.currentUser!.uid,
+      'userId': _user['uid'],
+      'userName': _user['name'],
+      'me': user!.uid,
     });
     if (resp.data != null) {
       Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
+      _color[_user['uid']] = Colors.orange;
     }
   }
 
