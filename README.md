@@ -1,16 +1,8 @@
-# lalo
+# Leave a Light on
 
-A new Flutter project.
+I started this project because I wanted to learn to build apps with Flutter and Firebase.  
+Now I have this app which is almost ready to get launched in Google Playstore.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Leave a Light on is an app where you can blink the lights of friends or loved ones when you are thinking aboud them. You start by creating an account with your email or sign in with google (Firebase Auth). Then you connect your Philips Hue remote account. The OAuth tokens are stored in Firestore and the callback is a Firebase cloudfunction which creates the tokens. Next you can send links (Firebase dynamic links) to friends and they have to accept the request. You are now able to blink their light.
