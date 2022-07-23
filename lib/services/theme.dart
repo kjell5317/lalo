@@ -39,8 +39,8 @@ var themeDark = themeLight.copyWith(
     iconTheme: const IconThemeData(color: Colors.white),
     brightness: Brightness.dark,
     appBarTheme: themeLight.appBarTheme.copyWith(
-      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24),
-    ),
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24),
+        iconTheme: const IconThemeData(color: Colors.white)),
     inputDecorationTheme: themeLight.inputDecorationTheme.copyWith(
         border: const OutlineInputBorder(),
         labelStyle: const TextStyle(color: Colors.white)),

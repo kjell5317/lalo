@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:lalo/pages/FriendPage.dart';
 import 'package:lalo/pages/loading.dart';
 import 'package:lalo/services/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -114,6 +115,8 @@ class _MorePageState extends State<MorePage> {
                         settingsListBackground: Colors.grey[900]),
                     sections: [
                       SettingsSection(
+                        title: const Text('Light',
+                            style: TextStyle(color: Colors.orange)),
                         tiles: <SettingsTile>[
                           SettingsTile.switchTile(
                               leading: const Icon(Icons.do_not_disturb),
@@ -243,6 +246,26 @@ class _MorePageState extends State<MorePage> {
                         ],
                       ),
                       SettingsSection(
+                          title: const Text('Accepted Requests',
+                              style: TextStyle(color: Colors.orange)),
+                          tiles: [
+                            // Feedback
+                            SettingsTile.navigation(
+                              title: const Text('You\'re a friend of...'),
+                              leading: const Icon(Icons.supervisor_account),
+                              value: Text(snapshot.data['permissions']!
+                                  .map((i) => i['name'])
+                                  .join(', ')),
+                              onPressed: (context) => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const FriendPage())),
+                            )
+                          ]),
+                      SettingsSection(
+                        title: const Text('App',
+                            style: TextStyle(color: Colors.orange)),
                         tiles: [
                           // Feedback
                           SettingsTile.navigation(

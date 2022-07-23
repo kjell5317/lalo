@@ -74,9 +74,11 @@ class _HomePageState extends State<HomePage> {
         .get()
         .then((data) {
       senderId = data['senderId'];
-      if (senderId == null) return;
+      if (data['senderId'] == null) return;
       FirebaseFirestore.instance.doc('users/${user!.uid}').update({
-        'permissions': FieldValue.arrayUnion([senderId])
+        'permissions': FieldValue.arrayUnion([
+          {'uid': senderId, 'name': data['senderName'], 'color': 'FFFFFF'}
+        ])
       });
     });
     if (senderId == null) {
@@ -200,7 +202,9 @@ class _HomePageState extends State<HomePage> {
           Fluttertoast.showToast(
               msg: 'You can\'t be friends with yourself',
               timeInSecForIosWeb: 3);
-        } else if (data['permissions'].contains(link['senderId'])) {
+        } else if (data['permissions']
+            .map((i) => i['uid'])
+            .contains(link['senderId'])) {
           FirebaseFirestore.instance.doc('links/$initialLink').delete();
           initialLink = null;
           Fluttertoast.showToast(
@@ -244,12 +248,13 @@ class _HomePageState extends State<HomePage> {
       ).load();
     }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _link();
       if (!kIsWeb) {
         FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
           initialLink = Uri.parse(dynamicLink.link.queryParameters['id'] ?? '');
           _link();
         });
+      } else {
+        _link();
       }
     });
   }

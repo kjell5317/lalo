@@ -9,17 +9,20 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (FirebaseAuth.instance.currentUser != null) {
-      return ProfileScreen(actions: [
-        SignedOutAction((context) {
-          Navigator.pop(context);
-        }),
-      ], providerConfigs: const [
-        EmailProviderConfiguration(),
-        GoogleProviderConfiguration(
-          clientId:
-              '996256225333-pf7pkq5ru9i6v85qdog3fl5vgub99l6a.apps.googleusercontent.com',
-        ),
-      ]);
+      return ProfileScreen(
+          appBar: AppBar(title: const Text('Profile')),
+          actions: [
+            SignedOutAction((context) {
+              Navigator.pop(context);
+            }),
+          ],
+          providerConfigs: const [
+            EmailProviderConfiguration(),
+            GoogleProviderConfiguration(
+              clientId:
+                  '996256225333-pf7pkq5ru9i6v85qdog3fl5vgub99l6a.apps.googleusercontent.com',
+            ),
+          ]);
     } else {
       return const LoginPage();
     }
