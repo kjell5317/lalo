@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:lalo/pages/FriendPage.dart';
+import 'package:lalo/pages/friend.dart';
 import 'package:lalo/pages/loading.dart';
 import 'package:lalo/services/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
