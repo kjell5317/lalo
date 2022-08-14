@@ -51,8 +51,9 @@ class _FriendPageState extends State<FriendPage> {
                   Expanded(
                     child: SettingsList(
                         contentPadding: const EdgeInsets.all(10),
-                        lightTheme: const SettingsThemeData(
-                            settingsListBackground: Colors.white),
+                        lightTheme: SettingsThemeData(
+                            settingsListBackground:
+                                Theme.of(context).scaffoldBackgroundColor),
                         darkTheme: SettingsThemeData(
                             settingsListBackground: Colors.grey[900]),
                         sections: [
@@ -64,19 +65,90 @@ class _FriendPageState extends State<FriendPage> {
                                         value: const Text(
                                             'Tap to remove this friend'),
                                         leading: const Icon(
-                                            Icons.account_circle_outlined),
+                                          Icons.account_circle_outlined,
+                                        ),
                                         onPressed: (context) {
-                                          userRef?.update({
-                                            'permissions':
-                                                FieldValue.arrayRemove([i])
-                                          });
+                                          showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return AlertDialog(
+                                                  title: Text(
+                                                      'Do you want to remove ${i["name"]}?'),
+                                                  actions: [
+                                                    Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceEvenly,
+                                                        children: [
+                                                          ElevatedButton(
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context);
+                                                                userRef
+                                                                    ?.update({
+                                                                  'permissions':
+                                                                      FieldValue
+                                                                          .arrayRemove([
+                                                                    i
+                                                                  ])
+                                                                });
+                                                              },
+                                                              child:
+                                                                  const Padding(
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .all(
+                                                                            8.0),
+                                                                child:
+                                                                    Text('Yes'),
+                                                              )),
+                                                          TextButton(
+                                                              onPressed: (() =>
+                                                                  Navigator.pop(
+                                                                      context)),
+                                                              child: const Padding(
+                                                                  padding:
+                                                                      EdgeInsets
+                                                                          .all(
+                                                                              8.0),
+                                                                  child: Text(
+                                                                      'No')))
+                                                        ])
+                                                  ],
+                                                );
+                                              });
                                         },
-                                        trailing: Container(
-                                          width: 24,
-                                          height: 24,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: fromHex(i['color']),
+                                        trailing: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                        title: Text(
+                                                            'Choose a color'));
+                                                  });
+                                            },
+                                            child: Builder(builder: (context) {
+                                              if (snapshot.data['light']
+                                                  ['color']) {
+                                                return Container(
+                                                  width: 30,
+                                                  height: 30,
+                                                  decoration: BoxDecoration(
+                                                    border: Border.all(
+                                                        width: 1.5,
+                                                        color: Colors
+                                                            .lightBlueAccent),
+                                                    shape: BoxShape.circle,
+                                                    color: fromHex(i['color']),
+                                                  ),
+                                                );
+                                              } else {
+                                                return const SizedBox.shrink();
+                                              }
+                                            }),
                                           ),
                                         ));
                                   })
@@ -85,8 +157,12 @@ class _FriendPageState extends State<FriendPage> {
                         ]),
                   ),
                   const Expanded(
-                    child: Text(
-                        'Here are all the friends who\'s requests you accepted!'),
+                    child: Padding(
+                      padding: EdgeInsets.all(10.0),
+                      child: Text(
+                          'Here are all the friends who\'s requests you accepted!\nYou can remove them or change the color in which they blink your light',
+                          textAlign: TextAlign.center),
+                    ),
                   )
                 ],
               ),
