@@ -295,12 +295,26 @@ class _HomePageState extends State<HomePage> {
                           if (!_color.containsKey(i['uid'])) {
                             _color[i['uid']] = Colors.orange;
                           }
-                          // print(_color[i['uid']]);
+                          if (snapshot.data['dnd']) {
+                            for (var k in _color.keys) {
+                              _color[k] = Colors.lightBlueAccent;
+                            }
+                          }
                           return InkWell(
                               onTap: () {
                                 if (_color[i['uid']] == Colors.orange) {
                                   _changeColor(i['uid']);
                                   _blink(i);
+                                } else {
+                                  if (snapshot.data['dnd']) {
+                                    Fluttertoast.showToast(
+                                        msg: 'Switch off Do Not Disturb mode',
+                                        timeInSecForIosWeb: 3);
+                                  } else {
+                                    Fluttertoast.showToast(
+                                        msg: 'Please wait at least 30 seconds',
+                                        timeInSecForIosWeb: 3);
+                                  }
                                 }
                               },
                               child: AspectRatio(
