@@ -109,8 +109,9 @@ class _MorePageState extends State<MorePage> {
 
                   return SettingsList(
                     contentPadding: const EdgeInsets.all(10),
-                    lightTheme: const SettingsThemeData(
-                        settingsListBackground: Colors.white),
+                    lightTheme: SettingsThemeData(
+                        settingsListBackground:
+                            Theme.of(context).scaffoldBackgroundColor),
                     darkTheme: SettingsThemeData(
                         settingsListBackground: Colors.grey[900]),
                     sections: [
@@ -245,6 +246,8 @@ class _MorePageState extends State<MorePage> {
                           ),
                         ],
                       ),
+
+                      // Friends
                       SettingsSection(
                           title: const Text('Accepted Requests',
                               style: TextStyle(color: Colors.orange)),
@@ -253,9 +256,15 @@ class _MorePageState extends State<MorePage> {
                             SettingsTile.navigation(
                               title: const Text('You\'re a friend of...'),
                               leading: const Icon(Icons.supervisor_account),
-                              value: Text(snapshot.data['permissions']!
-                                  .map((i) => i['name'])
-                                  .join(', ')),
+                              value: Builder(builder: (context) {
+                                if (snapshot.data['permissions'].length > 0) {
+                                  return Text(snapshot.data['permissions']!
+                                      .map((i) => i['name'])
+                                      .join(', '));
+                                } else {
+                                  return const Text('Nobody');
+                                }
+                              }),
                               onPressed: (context) => Navigator.push(
                                   context,
                                   MaterialPageRoute(
