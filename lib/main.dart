@@ -1,18 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:lalo/pages/name.dart';
 
 import 'package:lalo/services/services.dart';
 
 import 'package:lalo/pages/login.dart';
+import 'package:lalo/pages/name.dart';
 import 'package:lalo/pages/home.dart';
 import 'package:lalo/pages/more.dart';
 import 'package:lalo/pages/loading.dart';

@@ -21,7 +21,10 @@ dependencies:
   google_fonts: ^2.3.1
   font_awesome_flutter: ^9.2.0
   flutterfire_ui: ^0.4.2+2
-  settings_ui: ^2.0.2
+  settings_ui:
+    git:
+      url: https://github.com/yako-dev/flutter-settings-ui
+      ref: dev
   url_launcher: ^6.0.20
   cloud_functions: ^3.2.11
   fluttertoast: ^8.0.9
