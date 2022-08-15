@@ -75,7 +75,7 @@ class _HomePageState extends State<HomePage> {
         .then((data) {
       senderId = data['senderId'];
       if (data['senderId'] == null) return;
-      FirebaseFirestore.instance.doc('users/${user!.uid}').update({
+      userRef!.update({
         'permissions': FieldValue.arrayUnion([
           {'uid': senderId, 'name': data['senderName'], 'color': 'FFFFFF'}
         ])
