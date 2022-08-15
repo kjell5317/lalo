@@ -86,7 +86,12 @@ class _AppState extends State<App> {
                       analytics!.logSignUp(
                           signUpMethod: user!.providerData[0].providerId);
                       userRef?.set({
-                        'light': {'name': 'Not selected', 'id': '', 'last': 0},
+                        'light': {
+                          'name': 'Not selected',
+                          'id': '',
+                          'last': 0,
+                          'color': false
+                        },
                         'api': {'name': 'No services connected'},
                         'friends': [],
                         'permissions': [],

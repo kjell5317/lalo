@@ -24,7 +24,7 @@ export const callback = functions.https.onRequest((req, res) => {
         .then((api: Api) => {
             const remoteCredentials = api.remote!.getRemoteAccessCredentials();
             api.lights.getAll().then((allLights: any) => {
-                const lights = allLights.map((light: any) => { return { "name": light.name, "id": light.id } });
+                const lights = allLights.map((light: any) => { return { "name": light.name, "id": light.id, "color": light.type.match(/color/i) != null }; });
                 db.doc(`users/${user}`).set({
                     "api": {
                         "name": "Philips Hue", "credentials": remoteCredentials, "lights": lights
@@ -44,40 +44,45 @@ export const callback = functions.https.onRequest((req, res) => {
             res.send("Can not connect to Philips Hue!");
         });
 });
-// TODO: renew credentials
+
 // Blink light
 export const blink = functions.https.onCall((data) => {
     let x = 0;
     return db.doc(`users/${data.userId}`).get().then((snapshot: any) => {
         if (snapshot.exists) {
-            if (snapshot.data().permissions.map((i: any) => i.uid).includes(data.me)) {
-                if (snapshot.data().api.name === "No services connected") return "Friend has no light";
-                if (snapshot.data().dnd === true || Date.now() - snapshot.data().light.last < 30 * 1000) return;
-                db.doc(`users/${data.userId}`).update({ "light.last": Date.now() });
-                if (snapshot.data().api.name === "Philips Hue") {
-                    const cred = snapshot.data().api.credentials;
-                    if (!cred) return "Could not connect to light";
-                    return remoteBootstrap.connectWithTokens(
-                        cred.tokens.access.value, cred.tokens.refresh.value, cred.username)
-                        .then((api: Api) => {
-                            if (snapshot.data().light.name === "Not selected" || null) {
-                                return "Friend has no light";
-                            }
-                            return api.lights.getLightState(snapshot.data().light.id).then((value: any) => {
-                                blinkLight(api, snapshot.data().light.id, value.on);
+            for (const permission of snapshot.data().permissions) {
+                if (permission.uid === data.me) {
+                    if (snapshot.data().api.name === "No services connected") return "Friend has no light";
+                    if (snapshot.data().dnd === true || Date.now() - snapshot.data().light.last < 30 * 1000) return;
+                    db.doc(`users/${data.userId}`).update({ "light.last": Date.now() });
+                    if (snapshot.data().api.name === "Philips Hue") {
+                        const cred = snapshot.data().api.credentials;
+                        if (!cred) return "Could not connect to light";
+                        return remoteBootstrap.connectWithTokens(
+                            cred.tokens.access.value, cred.tokens.refresh.value, cred.username)
+                            .then((api: Api) => {
+                                if (snapshot.data().light.name === "Not selected" || null) {
+                                    return "Friend has no light";
+                                }
+                                return api.lights.getLightState(snapshot.data().light.id).then((value: any) => {
+                                    const state = new v3.lightStates.LightState();
+                                    const color = hexToRgb(permission.color);
+                                    state.on().brightness(100).rgb(color);
+                                    api.lights.setLightState(snapshot.data().light.id, state).then(() => {
+                                        setTimeout(blinkLight, 1000, api, snapshot.data().light.id, true, color, value);
+                                    });
+                                }).catch((e) => {
+                                    console.error(e);
+                                    return "Could not blink light";
+                                });
                             }).catch((e) => {
                                 console.error(e);
-                                return "Could not blink light";
+                                return "Could not connect to light";
                             });
-                        }).catch((e) => {
-                            console.error(e);
-                            return "Could not connect to light";
-                        });
-                } else return "Could not connect to light";
-
-            } else {
-                return removeFriend(data)
+                    } else return "Could not connect to light";
+                }
             }
+            return removeFriend(data);
         } else {
             return removeFriend(data);
         }
@@ -106,18 +111,40 @@ export const blink = functions.https.onCall((data) => {
      * @param {Api} api
      * @param {string} id
      * @param {boolean} value
+     * @param {number[]} color
+     * @param {any} original
      * @return {Promise<void>}
      */
-    async function blinkLight(api: Api, id: string, value: boolean): Promise<void> {
+    async function blinkLight(api: Api, id: string, value: boolean, color: number[], original: any): Promise<void> {
+        const state = new v3.lightStates.LightState();
+        if (value) state.off();
+        else state.on().brightness(100).rgb(color);
         try {
-            await api.lights.setLightState(id, { on: !value });
+            await api.lights.setLightState(id, state);
         } catch (e) {
             console.error(e);
         }
-        if (++x < 4) {
-            setTimeout(blinkLight, 1000, api, id, !value);
+        if (++x < 3) {
+            setTimeout(blinkLight, 1000, api, id, !value, color, original);
+        } else try {
+            await api.lights.setLightState(id, original);
+        } catch (e) {
+            console.error(e);
         }
     }
+    /**
+     * Converts HEX value to RGB
+     * @param {string} hex
+     * @return {[int, int, int]} rgb
+     */
+    function hexToRgb(hex: string) {
+        const result = hex.match(/[0-F]{1,2}/gi);
+        return [
+          parseInt(result![0], 16),
+          parseInt(result![1], 16),
+          parseInt(result![2], 16)
+        ]
+      }
 });
 
 // Accept friend request

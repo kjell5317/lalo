@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:lalo/pages/loading.dart';
 import 'package:lalo/services/globals.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -60,39 +63,103 @@ class _FriendPageState extends State<FriendPage> {
                           SettingsSection(
                               tiles: snapshot.data['permissions']
                                   .map((i) {
+                                    Color pickerColor = fromHex(i['color']);
+                                    void changeColor(Color color) {
+                                      setState(() => pickerColor = color);
+                                    }
+
                                     return SettingsTile.navigation(
-                                        title: Text(i['name']),
-                                        value: const Text(
-                                            'Tap to remove this friend'),
-                                        leading: const Icon(
-                                          Icons.account_circle_outlined,
-                                        ),
-                                        onPressed: (context) {
-                                          showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return AlertDialog(
-                                                  title: Text(
-                                                      'Do you want to remove ${i["name"]}?'),
-                                                  actions: [
-                                                    Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceEvenly,
-                                                        children: [
-                                                          ElevatedButton(
-                                                              onPressed: () {
+                                      title: Text(i['name']),
+                                      value: const Text(
+                                          'Tap to remove this friend'),
+                                      leading: const Icon(
+                                        Icons.account_circle_outlined,
+                                      ),
+                                      onPressed: (context) {
+                                        showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: Text(
+                                                    'Do you want to remove ${i["name"]}?'),
+                                                actions: [
+                                                  Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceEvenly,
+                                                      children: [
+                                                        ElevatedButton(
+                                                            onPressed: () {
+                                                              Navigator.pop(
+                                                                  context);
+                                                              userRef?.update({
+                                                                'permissions':
+                                                                    FieldValue
+                                                                        .arrayRemove(
+                                                                            [i])
+                                                              });
+                                                            },
+                                                            child:
+                                                                const Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(8.0),
+                                                              child:
+                                                                  Text('Yes'),
+                                                            )),
+                                                        TextButton(
+                                                            onPressed: (() =>
                                                                 Navigator.pop(
-                                                                    context);
-                                                                userRef
-                                                                    ?.update({
-                                                                  'permissions':
-                                                                      FieldValue
-                                                                          .arrayRemove([
-                                                                    i
-                                                                  ])
-                                                                });
-                                                              },
+                                                                    context)),
+                                                            child: const Padding(
+                                                                padding:
+                                                                    EdgeInsets
+                                                                        .all(
+                                                                            8.0),
+                                                                child:
+                                                                    Text('No')))
+                                                      ])
+                                                ],
+                                              );
+                                            });
+                                      },
+                                      trailing: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Builder(builder: (context) {
+                                          if (snapshot.data['light']['color']) {
+                                            return GestureDetector(
+                                                onTap: () {
+                                                  showDialog(
+                                                      context: context,
+                                                      builder: (context) {
+                                                        return AlertDialog(
+                                                          title: const Text(
+                                                              'Pick a color!'),
+                                                          content:
+                                                              SingleChildScrollView(
+                                                            child: BlockPicker(
+                                                              availableColors: const [
+                                                                Colors.white,
+                                                                Colors.yellow,
+                                                                Colors.orange,
+                                                                Colors.red,
+                                                                Colors.pink,
+                                                                Colors.purple,
+                                                                Colors.blue,
+                                                                Colors
+                                                                    .lightBlue,
+                                                                Colors.green,
+                                                                Colors
+                                                                    .lightGreen,
+                                                              ],
+                                                              pickerColor:
+                                                                  pickerColor,
+                                                              onColorChanged:
+                                                                  changeColor,
+                                                            ),
+                                                          ),
+                                                          actions: <Widget>[
+                                                            ElevatedButton(
                                                               child:
                                                                   const Padding(
                                                                 padding:
@@ -100,57 +167,64 @@ class _FriendPageState extends State<FriendPage> {
                                                                         .all(
                                                                             8.0),
                                                                 child:
-                                                                    Text('Yes'),
-                                                              )),
-                                                          TextButton(
-                                                              onPressed: (() =>
-                                                                  Navigator.pop(
-                                                                      context)),
-                                                              child: const Padding(
-                                                                  padding:
-                                                                      EdgeInsets
-                                                                          .all(
-                                                                              8.0),
-                                                                  child: Text(
-                                                                      'No')))
-                                                        ])
-                                                  ],
-                                                );
-                                              });
-                                        },
-                                        trailing: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              showDialog(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    return AlertDialog(
-                                                        title: Text(
-                                                            'Choose a color'));
-                                                  });
-                                            },
-                                            child: Builder(builder: (context) {
-                                              if (snapshot.data['light']
-                                                  ['color']) {
-                                                return Container(
+                                                                    Text('OK'),
+                                                              ),
+                                                              onPressed: () {
+                                                                userRef!
+                                                                    .update({
+                                                                  'permissions':
+                                                                      FieldValue
+                                                                          .arrayRemove([
+                                                                    i
+                                                                  ])
+                                                                });
+                                                                userRef!
+                                                                    .update({
+                                                                  'permissions':
+                                                                      FieldValue
+                                                                          .arrayUnion([
+                                                                    {
+                                                                      'name': i[
+                                                                          'name'],
+                                                                      'uid': i[
+                                                                          'uid'],
+                                                                      'color': pickerColor
+                                                                          .value
+                                                                          .toRadixString(
+                                                                              16)
+                                                                          .substring(
+                                                                              2)
+                                                                    }
+                                                                  ])
+                                                                });
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop();
+                                                              },
+                                                            ),
+                                                          ],
+                                                        );
+                                                      });
+                                                },
+                                                child: Container(
                                                   width: 30,
                                                   height: 30,
                                                   decoration: BoxDecoration(
                                                     border: Border.all(
                                                         width: 1.5,
-                                                        color: Colors
-                                                            .lightBlueAccent),
+                                                        color:
+                                                            Colors.grey[400] ??
+                                                                Colors.black),
                                                     shape: BoxShape.circle,
                                                     color: fromHex(i['color']),
                                                   ),
-                                                );
-                                              } else {
-                                                return const SizedBox.shrink();
-                                              }
-                                            }),
-                                          ),
-                                        ));
+                                                ));
+                                          } else {
+                                            return const SizedBox.shrink();
+                                          }
+                                        }),
+                                      ),
+                                    );
                                   })
                                   .toList()
                                   .cast<AbstractSettingsTile>())
