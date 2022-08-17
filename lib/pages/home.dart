@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -19,7 +18,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  BannerAd? _ad;
   final Map<String, Color> _color = {};
 
   Future<void> _blink(Map<String, dynamic> _user) async {
@@ -43,7 +41,7 @@ class _HomePageState extends State<HomePage> {
         FirebaseFirestore.instance.collection('links').doc();
     var body = {
       'dynamicLinkInfo': {
-        'domainUriPrefix': 'https://app-lalo.tk/link',
+        'domainUriPrefix': 'https://app-lalo.tk/l',
         'link': 'https://app-lalo.tk/?id=${linkRef.id}',
         'androidInfo': {'androidPackageName': 'de.kjellhanken.lalo'},
       },
@@ -225,28 +223,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    _ad?.dispose();
-  }
-
-  @override
   void initState() {
     super.initState();
-    if (!kIsWeb) {
-      BannerAd(
-        adUnitId: 'ca-app-pub-1021570699948608/9379851670',
-        size: AdSize.banner,
-        request: const AdRequest(),
-        listener: BannerAdListener(onAdLoaded: (ad) {
-          setState(() {
-            _ad = ad as BannerAd;
-          });
-        }, onAdFailedToLoad: (Ad ad, LoadAdError error) {
-          ad.dispose();
-        }),
-      ).load();
-    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!kIsWeb) {
         FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
@@ -261,150 +239,129 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Builder(builder: (context) {
-          if (!kIsWeb && _ad != null) {
-            return Padding(
-                padding: const EdgeInsets.only(top: 20.0),
-                child: Container(
-                  alignment: Alignment.center,
-                  child: AdWidget(ad: _ad!),
-                  width: _ad!.size.width.toDouble(),
-                  height: _ad!.size.height.toDouble(),
-                ));
-          } else {
-            return const SizedBox.shrink();
-          }
-        }),
-        Expanded(
-          child: Builder(builder: (context) {
-            return StreamBuilder<dynamic>(
-                stream: userRef?.snapshots(),
-                builder:
-                    (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-                  if (snapshot.hasData) {
-                    if (waiting &&
-                        initialLink != null &&
-                        snapshot.data['light']['name'] != 'Not selected') {
-                      _modal();
-                      waiting = false;
+    return Builder(builder: (context) {
+      return StreamBuilder<dynamic>(
+          stream: userRef?.snapshots(),
+          builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+            if (snapshot.hasData) {
+              if (waiting &&
+                  initialLink != null &&
+                  snapshot.data['light']['name'] != 'Not selected') {
+                _modal();
+                waiting = false;
+              }
+              List<Widget> tiles = snapshot.data['friends']
+                  .map((i) {
+                    if (!_color.containsKey(i['uid'])) {
+                      _color[i['uid']] = Colors.orange;
                     }
-                    List<Widget> tiles = snapshot.data['friends']
-                        .map((i) {
-                          if (!_color.containsKey(i['uid'])) {
-                            _color[i['uid']] = Colors.orange;
-                          }
-                          if (snapshot.data['dnd']) {
-                            for (var k in _color.keys) {
-                              _color[k] = Colors.lightBlueAccent;
+                    if (snapshot.data['dnd']) {
+                      for (var k in _color.keys) {
+                        _color[k] = Colors.lightBlueAccent;
+                      }
+                    }
+                    return InkWell(
+                        onTap: () {
+                          if (_color[i['uid']] == Colors.orange) {
+                            _changeColor(i['uid']);
+                            _blink(i);
+                          } else {
+                            if (snapshot.data['dnd']) {
+                              Fluttertoast.showToast(
+                                  msg: 'Switch off Do Not Disturb mode',
+                                  timeInSecForIosWeb: 3);
+                            } else {
+                              Fluttertoast.showToast(
+                                  msg: 'Please wait at least 30 seconds',
+                                  timeInSecForIosWeb: 3);
                             }
                           }
-                          return InkWell(
-                              onTap: () {
-                                if (_color[i['uid']] == Colors.orange) {
-                                  _changeColor(i['uid']);
-                                  _blink(i);
-                                } else {
-                                  if (snapshot.data['dnd']) {
-                                    Fluttertoast.showToast(
-                                        msg: 'Switch off Do Not Disturb mode',
-                                        timeInSecForIosWeb: 3);
-                                  } else {
-                                    Fluttertoast.showToast(
-                                        msg: 'Please wait at least 30 seconds',
-                                        timeInSecForIosWeb: 3);
-                                  }
-                                }
-                              },
-                              child: AspectRatio(
-                                aspectRatio: 1.0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(10.0),
-                                  decoration: BoxDecoration(
-                                    color: _color[i['uid']],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(i['name'],
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontSize: 24,
-                                              color: Colors.white,
-                                            )),
-                                      ),
-                                      const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Icon(
-                                          Icons.lightbulb,
-                                          color: Colors.white,
-                                          size: 28,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                ),
-                              ));
-                        })
-                        .toList()
-                        .cast<Widget>();
-                    if (snapshot.data['friends'].length < 10) {
-                      tiles.add(InkWell(
-                          onTap: () {
-                            _createLink();
-                          },
-                          child: AspectRatio(
-                            aspectRatio: 1.0,
-                            child: Container(
-                              padding: const EdgeInsets.all(10.0),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[400],
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text(
-                                      'Add a friend',
+                        },
+                        child: AspectRatio(
+                          aspectRatio: 1.0,
+                          child: Container(
+                            padding: const EdgeInsets.all(10.0),
+                            decoration: BoxDecoration(
+                              color: _color[i['uid']],
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(i['name'],
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          fontSize: 24, color: Colors.white),
-                                    ),
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        color: Colors.white,
+                                      )),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Icon(
+                                    Icons.lightbulb,
+                                    color: Colors.white,
+                                    size: 28,
                                   ),
-                                  Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Icon(
-                                      Icons.add,
-                                      color: Colors.white,
-                                      size: 28,
-                                    ),
-                                  )
-                                ],
+                                )
+                              ],
+                            ),
+                          ),
+                        ));
+                  })
+                  .toList()
+                  .cast<Widget>();
+              if (snapshot.data['friends'].length < 10) {
+                tiles.add(InkWell(
+                    onTap: () {
+                      _createLink();
+                    },
+                    child: AspectRatio(
+                      aspectRatio: 1.0,
+                      child: Container(
+                        padding: const EdgeInsets.all(10.0),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                'Add a friend',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 24, color: Colors.white),
                               ),
                             ),
-                          )));
-                    }
-                    return GridView.count(
-                      primary: false,
-                      padding: const EdgeInsets.all(20),
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      crossAxisCount: 2,
-                      children: tiles,
-                    );
-                  }
-                  return const LoadingScreen();
-                });
-          }),
-        ),
-      ],
-    );
+                            Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Icon(
+                                Icons.add,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    )));
+              }
+              return GridView.count(
+                primary: false,
+                padding: const EdgeInsets.all(20),
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                crossAxisCount: 2,
+                children: tiles,
+              );
+            }
+            return const LoadingScreen();
+          });
+    });
   }
 }

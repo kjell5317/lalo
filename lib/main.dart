@@ -48,11 +48,37 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  BannerAd? _ad;
   int _selectedIndex = 0;
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _ad?.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      BannerAd(
+        adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+        size: AdSize.banner,
+        request: const AdRequest(),
+        listener: BannerAdListener(onAdLoaded: (ad) {
+          setState(() {
+            _ad = ad as BannerAd;
+          });
+        }, onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          ad.dispose();
+        }),
+      ).load();
+    }
   }
 
   @override
@@ -127,9 +153,29 @@ class _AppState extends State<App> {
                             ),
                           ],
                         ),
-                        body: IndexedStack(
-                          index: _selectedIndex,
-                          children: App._pages[1],
+                        body: Column(
+                          children: [
+                            Builder(builder: (context) {
+                              if (!kIsWeb && _ad != null) {
+                                return Padding(
+                                    padding: const EdgeInsets.only(top: 20.0),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      child: AdWidget(ad: _ad!),
+                                      width: _ad!.size.width.toDouble(),
+                                      height: _ad!.size.height.toDouble(),
+                                    ));
+                              } else {
+                                return const SizedBox.shrink();
+                              }
+                            }),
+                            Expanded(
+                              child: IndexedStack(
+                                index: _selectedIndex,
+                                children: App._pages[1],
+                              ),
+                            ),
+                          ],
                         ),
                         bottomNavigationBar: BottomNavigationBar(
                           items: const <BottomNavigationBarItem>[

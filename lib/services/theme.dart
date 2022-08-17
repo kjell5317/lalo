@@ -1,7 +1,3 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -11,9 +7,7 @@ var themeLight = ThemeData(
   bottomSheetTheme: BottomSheetThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
   colorScheme: ThemeData().colorScheme.copyWith(primary: Colors.orange),
-  fontFamily: kIsWeb && window.navigator.userAgent.contains('OS 15_')
-      ? '-apple-system'
-      : GoogleFonts.roboto().fontFamily,
+  fontFamily: GoogleFonts.roboto().fontFamily,
   appBarTheme: AppBarTheme(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       backgroundColor: Colors.orange,
@@ -48,7 +42,9 @@ var themeDark = themeLight.copyWith(
         titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24),
         iconTheme: const IconThemeData(color: Colors.white)),
     inputDecorationTheme: themeLight.inputDecorationTheme.copyWith(
-        border: const OutlineInputBorder(),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey[400] ?? Colors.grey),
+        ),
         labelStyle: const TextStyle(color: Colors.white)),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       selectedItemColor: Colors.orange,

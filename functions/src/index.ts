@@ -30,7 +30,7 @@ export const callback = functions.https.onRequest((req, res) => {
                         "name": "Philips Hue", "credentials": remoteCredentials, "lights": lights
                     },
                 }, { merge: true })
-                    .then(() => res.redirect("https://app-lalo.tk/link/open"))
+                    .then(() => res.redirect("https://app-lalo.tk/l/open"))
                     .catch((e: any) => {
                         console.error(e);
                         res.send("Can not connect to database!");
