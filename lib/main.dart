@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -49,6 +51,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> with WidgetsBindingObserver {
   BannerAd? _ad;
+  StreamSubscription? _stream;
 
   int _selectedIndex = 0;
   void _onItemTapped(int index) {
@@ -61,12 +64,20 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   void dispose() {
     super.dispose();
     _ad?.dispose();
+    _stream?.cancel();
   }
 
   @override
   void initState() {
     super.initState();
     if (!kIsWeb) {
+      _stream = FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
+        var link = dynamicLink.link.queryParameters['id'];
+        if (link != initialLink) {
+          initialLink = link;
+        }
+      });
+
       BannerAd(
         adUnitId: 'ca-app-pub-3940256099942544/6300978111',
         size: AdSize.banner,

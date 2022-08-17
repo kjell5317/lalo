@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutterfire_ui/auth.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:lalo/services/globals.dart';
 
 class LoginPage extends StatelessWidget {
@@ -11,13 +12,9 @@ class LoginPage extends StatelessWidget {
       headerBuilder: (context, _, __) {
         return const Center(
             child: Padding(
-          padding: EdgeInsets.all(20.0),
-          child: Text('Leave a Light on',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.orange,
-                fontSize: 45,
-              )),
+          padding: EdgeInsets.only(top: 35.0),
+          child: FaIcon(FontAwesomeIcons.lightbulb,
+              size: 100, color: Colors.orange),
         ));
       },
       actions: [

@@ -13,7 +13,7 @@ class ProfilePage extends StatelessWidget {
           appBar: AppBar(title: const Text('Profile')),
           actions: [
             SignedOutAction((context) {
-              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/home');
             }),
           ],
           providerConfigs: const [

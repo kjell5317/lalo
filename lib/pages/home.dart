@@ -229,11 +229,8 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!kIsWeb) {
         _stream = FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
-          var link = dynamicLink.link.queryParameters['id'];
-          if (link != initialLink) {
-            initialLink = link;
-            _link();
-          }
+          initialLink = dynamicLink.link.queryParameters['id'];
+          _link();
         });
       }
       _link();
