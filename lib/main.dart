@@ -24,13 +24,14 @@ void main() async {
   );
   analytics = FirebaseAnalytics.instance;
   if (!kIsWeb) {
-    initialLink = await FirebaseDynamicLinks.instance
-        .getInitialLink()
-        .then((value) => Uri.parse(value?.link.queryParameters['id'] ?? ''));
+    initialLink =
+        await FirebaseDynamicLinks.instance.getInitialLink().then((value) {
+      return value?.link.queryParameters['id'];
+    });
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
     MobileAds.instance.initialize();
   } else if (Uri.base.queryParameters['id'] != null) {
-    initialLink = Uri.parse(Uri.base.queryParameters['id']!);
+    initialLink = Uri.base.queryParameters['id'];
   }
 
   runApp(const App());
@@ -47,8 +48,9 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> {
+class _AppState extends State<App> with WidgetsBindingObserver {
   BannerAd? _ad;
+
   int _selectedIndex = 0;
   void _onItemTapped(int index) {
     setState(() {
@@ -56,15 +58,29 @@ class _AppState extends State<App> {
     });
   }
 
+  AppLifecycleState? _notification;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    print('state: $state, INITIAL: $_notification');
+    if (state == AppLifecycleState.resumed && state != _notification) {
+      // link = null;
+    }
+    setState(() {
+      _notification = state;
+    });
+  }
+
   @override
   void dispose() {
     super.dispose();
     _ad?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
   }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (!kIsWeb) {
       BannerAd(
         adUnitId: 'ca-app-pub-3940256099942544/6300978111',
