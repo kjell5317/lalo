@@ -228,16 +228,14 @@ class _FriendPageState extends State<FriendPage> {
                                   .cast<AbstractSettingsTile>())
                         ]),
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Text(
-                        'Here are all the friends who\'s requests you accepted!\nYou can remove them or change the color in which they blink your light',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Text(
+                      'Here are all the friends who\'s requests you accepted!\nYou can remove them or change the color in which they blink your light',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[400]),
                     ),
-                  )
+                  ),
                 ],
               ),
             );
