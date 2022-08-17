@@ -20,7 +20,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final Map<String, Color> _color = {};
-  StreamSubscription? dynStream;
+  StreamSubscription? _stream;
 
   void _changeColor(String uid) async {
     setState(() {
@@ -79,7 +79,10 @@ class _HomePageState extends State<HomePage> {
   Future<void> _accept() async {
     Navigator.pop(context);
     String? senderId;
-    await FirebaseFirestore.instance.doc('links/$link').get().then((data) {
+    await FirebaseFirestore.instance
+        .doc('links/$initialLink')
+        .get()
+        .then((data) {
       senderId = data['senderId'];
       if (data['senderId'] == null) return;
       userRef!.update({
@@ -99,14 +102,13 @@ class _HomePageState extends State<HomePage> {
       'friendId': user!.uid,
       'friendName': user!.displayName ?? '',
     });
-    FirebaseFirestore.instance.doc('links/$link').delete();
+    FirebaseFirestore.instance.doc('links/$initialLink').delete();
     Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
-    link = null;
   }
 
-  void _modal() async {
+  void _modal(String _link) async {
     DocumentSnapshot<Map<String, dynamic>> data =
-        await FirebaseFirestore.instance.doc('links/$link').get();
+        await FirebaseFirestore.instance.doc('links/$_link').get();
     showModalBottomSheet<void>(
       isDismissible: false,
       context: context,
@@ -172,8 +174,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   onPressed: () {
-                    FirebaseFirestore.instance.doc('links/$link').delete();
-                    link = null;
+                    FirebaseFirestore.instance
+                        .doc('links/$initialLink')
+                        .delete();
                     Navigator.pop(context);
                   },
                 ),
@@ -186,22 +189,22 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _link() async {
-    if (link != null && !waiting) {
+    if (initialLink != null && !waiting) {
       DocumentSnapshot<Map<String, dynamic>> linkData =
-          await FirebaseFirestore.instance.doc('links/$link').get();
+          await FirebaseFirestore.instance.doc('links/$initialLink').get();
       if (linkData.exists) {
         DocumentSnapshot<Object?> data = await userRef!.get();
         if (linkData['senderId'] == user!.uid) {
-          FirebaseFirestore.instance.doc('links/$link').delete();
-          link = null;
+          FirebaseFirestore.instance.doc('links/$initialLink').delete();
+          initialLink = null;
           Fluttertoast.showToast(
               msg: 'You can\'t be friends with yourself',
               timeInSecForIosWeb: 3);
         } else if (data['permissions']
             .map((i) => i['uid'])
             .contains(linkData['senderId'])) {
-          FirebaseFirestore.instance.doc('links/$link').delete();
-          link = null;
+          FirebaseFirestore.instance.doc('links/$initialLink').delete();
+          initialLink = null;
           Fluttertoast.showToast(
               msg: 'You are already friends', timeInSecForIosWeb: 3);
         } else if (data['light']['name'] == 'Not selected') {
@@ -210,10 +213,11 @@ class _HomePageState extends State<HomePage> {
               timeInSecForIosWeb: 3);
           waiting = true;
         } else {
-          _modal();
+          _modal(initialLink!);
+          initialLink = null;
         }
       } else {
-        link = null;
+        initialLink = null;
         Fluttertoast.showToast(msg: 'Invalid link', timeInSecForIosWeb: 3);
       }
     }
@@ -222,29 +226,24 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!kIsWeb) {
-        dynStream = FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
-          initialLink = dynamicLink.link.queryParameters['id'];
-          print('LINK: $link, INITIAL: $initialLink');
+        _stream = FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
+          var link = dynamicLink.link.queryParameters['id'];
           if (link != initialLink) {
-            link = initialLink;
+            initialLink = link;
             _link();
           }
         });
       }
-      print('2LINK: $link, INITIAL: $initialLink');
-      if (link != initialLink) {
-        link = initialLink;
-        _link();
-      }
+      _link();
     });
   }
 
   @override
   void dispose() {
     super.dispose();
-    dynStream?.cancel();
+    _stream?.cancel();
   }
 
   @override
@@ -255,9 +254,9 @@ class _HomePageState extends State<HomePage> {
           builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
             if (snapshot.hasData) {
               if (waiting &&
-                  link != null &&
+                  initialLink != null &&
                   snapshot.data['light']['name'] != 'Not selected') {
-                _modal();
+                _modal(initialLink!);
                 waiting = false;
               }
               List<Widget> tiles = snapshot.data['friends']

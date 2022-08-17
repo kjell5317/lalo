@@ -24,10 +24,9 @@ void main() async {
   );
   analytics = FirebaseAnalytics.instance;
   if (!kIsWeb) {
-    initialLink =
-        await FirebaseDynamicLinks.instance.getInitialLink().then((value) {
-      return value?.link.queryParameters['id'];
-    });
+    initialLink = await FirebaseDynamicLinks.instance
+        .getInitialLink()
+        .then((value) => value?.link.queryParameters['id']);
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
     MobileAds.instance.initialize();
   } else if (Uri.base.queryParameters['id'] != null) {
@@ -58,29 +57,15 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     });
   }
 
-  AppLifecycleState? _notification;
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    print('state: $state, INITIAL: $_notification');
-    if (state == AppLifecycleState.resumed && state != _notification) {
-      // link = null;
-    }
-    setState(() {
-      _notification = state;
-    });
-  }
-
   @override
   void dispose() {
     super.dispose();
     _ad?.dispose();
-    WidgetsBinding.instance.removeObserver(this);
   }
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     if (!kIsWeb) {
       BannerAd(
         adUnitId: 'ca-app-pub-3940256099942544/6300978111',
