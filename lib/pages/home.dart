@@ -76,13 +76,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _accept() async {
+  Future<void> _accept(String _link) async {
     Navigator.pop(context);
     String? senderId;
-    await FirebaseFirestore.instance
-        .doc('links/$initialLink')
-        .get()
-        .then((data) {
+    await FirebaseFirestore.instance.doc('links/$_link').get().then((data) {
       senderId = data['senderId'];
       if (data['senderId'] == null) return;
       userRef!.update({
@@ -102,7 +99,7 @@ class _HomePageState extends State<HomePage> {
       'friendId': user!.uid,
       'friendName': user!.displayName ?? '',
     });
-    FirebaseFirestore.instance.doc('links/$initialLink').delete();
+    FirebaseFirestore.instance.doc('links/$_link').delete();
     Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
   }
 
@@ -156,7 +153,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     onPressed: () {
-                      _accept();
+                      _accept(_link);
                     },
                   ),
                 ),
@@ -174,9 +171,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   onPressed: () {
-                    FirebaseFirestore.instance
-                        .doc('links/$initialLink')
-                        .delete();
+                    FirebaseFirestore.instance.doc('links/$_link').delete();
                     Navigator.pop(context);
                   },
                 ),
