@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -26,11 +28,11 @@ void main() async {
   if (!kIsWeb) {
     initialLink = await FirebaseDynamicLinks.instance
         .getInitialLink()
-        .then((value) => Uri.parse(value?.link.queryParameters['id'] ?? ''));
+        .then((value) => value?.link.queryParameters['id']);
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
     MobileAds.instance.initialize();
   } else if (Uri.base.queryParameters['id'] != null) {
-    initialLink = Uri.parse(Uri.base.queryParameters['id']!);
+    initialLink = Uri.base.queryParameters['id'];
   }
 
   runApp(const App());
@@ -47,8 +49,10 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> {
+class _AppState extends State<App> with WidgetsBindingObserver {
   BannerAd? _ad;
+  StreamSubscription? _stream;
+
   int _selectedIndex = 0;
   void _onItemTapped(int index) {
     setState(() {
@@ -60,12 +64,20 @@ class _AppState extends State<App> {
   void dispose() {
     super.dispose();
     _ad?.dispose();
+    _stream?.cancel();
   }
 
   @override
   void initState() {
     super.initState();
     if (!kIsWeb) {
+      _stream = FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
+        var link = dynamicLink.link.queryParameters['id'];
+        if (link != initialLink) {
+          initialLink = link;
+        }
+      });
+
       BannerAd(
         adUnitId: 'ca-app-pub-3940256099942544/6300978111',
         size: AdSize.banner,
