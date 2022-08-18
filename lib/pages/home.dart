@@ -52,8 +52,14 @@ class _HomePageState extends State<HomePage> {
             'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAUKHRQtdn_rxwt4wGRzzMHVqrDLJSKND0'),
         body: jsonEncode(body));
     if (res.statusCode == 200) {
-      Share.share(jsonDecode(res.body)['shortLink']).then((_) {
-        linkRef.set({'senderId': user!.uid, 'senderName': user!.displayName});
+      Share.share(
+              'Be my friend at Leave a Light on: ${jsonDecode(res.body)["shortLink"]}')
+          .then((_) {
+        linkRef.set({
+          'senderId': user!.uid,
+          'senderName': user!.displayName,
+          'time': DateTime.now().toUtc().millisecondsSinceEpoch
+        });
         analytics!.logShare(
             contentType: 'Friend Request', itemId: user!.uid, method: 'link');
       });

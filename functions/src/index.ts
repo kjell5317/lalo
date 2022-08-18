@@ -160,8 +160,8 @@ export const accept = functions.https.onCall((data) => {
     });
 });
 
-export const refresh = functions.pubsub.schedule("1, 7, 13, 19, 25, 31 of month 00:00").timeZone("Europe/Berlin").onRun((context) => {
-    return db.collection("users")
+export const refresh = functions.pubsub.schedule("1, 7, 13, 19, 25, 31 of month 00:00").timeZone("Europe/Berlin").onRun(async (context) => {
+    await db.collection("users")
         .where("api.credentials.tokens.access.expiresAt", "<", Date.now() + 6 * 24 * 60 * 60 * 1000)
         .get().then((result) => {
             result.forEach((user) => {
@@ -173,21 +173,22 @@ export const refresh = functions.pubsub.schedule("1, 7, 13, 19, 25, 31 of month 
                             cred.username
                         ).then((api: Api) => {
                             api.remote?.refreshTokens().then((refreshedTokens) => {
-                                db.doc(`users/${user.id}`).update({ "api.credentials.tokens.access": refreshedTokens.accessToken, "api.credentials.tokens.refresh": refreshedTokens.refreshToken })
-                                    .catch((e) => {
-                                        console.error(e);
-                                    });
-                            }).catch((e) => {
-                                console.error(e);
-                            });
-                        }).catch((e) => {
-                            console.error(e);
-                        });
+                                db.doc(`users/${user.id}`).update({
+                                    "api.credentials.tokens.access": refreshedTokens.accessToken,
+                                    "api.credentials.tokens.refresh": refreshedTokens.refreshToken
+                                })
+                            })
+                        })
                     }
-                }).catch((e) => {
-                    console.error(e);
-                });
+                })
             });
+    }).catch((e) => {
+        console.error(e);
+    });
+    await db.collection("links").where("time", "<", Date.now() - 7 * 24 * 60 * 60 * 1000).get().then((result) => {
+        result.forEach((link) => {
+            db.doc(`links/${link.id}`).delete();
+        });
     }).catch((e) => {
         console.error(e);
     });
