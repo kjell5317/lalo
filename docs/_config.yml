@@ -1,0 +1,15 @@
+title: Leave a Light on
+email: lalo@kjellhanken.de
+description: >- # this means to ignore newlines until "baseurl:"
+  The app that allows you to blink the lights of your most impoprtant people
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://lalo.kjellhanken.de" # the base hostname & protocol for your site, e.g. http://example.com
+twitter_username: kjell5317
+github_username: kjell5317
+header_pages:
+  - datenschutz.md
+
+# Build settings
+theme: minima
+plugins:
+  - jekyll-feed
