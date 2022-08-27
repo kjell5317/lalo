@@ -83,6 +83,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _accept(String _link) async {
+    print(_link);
     Navigator.pop(context);
     String? senderId;
     await FirebaseFirestore.instance.doc('links/$_link').get().then((data) {
