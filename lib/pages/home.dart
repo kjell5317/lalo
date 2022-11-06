@@ -197,7 +197,6 @@ class _HomePageState extends State<HomePage> {
       if (linkData.exists) {
         DocumentSnapshot<Object?> data = await userRef!.get();
         if (linkData['senderId'] == user!.uid) {
-          FirebaseFirestore.instance.doc('links/$initialLink').delete();
           initialLink = null;
           Fluttertoast.showToast(
               msg: 'You can\'t be friends with yourself',

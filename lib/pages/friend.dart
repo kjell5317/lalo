@@ -136,19 +136,80 @@ class _FriendPageState extends State<FriendPage> {
                                                           content:
                                                               SingleChildScrollView(
                                                             child: BlockPicker(
+                                                              layoutBuilder:
+                                                                  (BuildContext
+                                                                          context,
+                                                                      List<Color>
+                                                                          colors,
+                                                                      PickerItem
+                                                                          child) {
+                                                                Orientation
+                                                                    orientation =
+                                                                    MediaQuery.of(
+                                                                            context)
+                                                                        .orientation;
+
+                                                                return Container(
+                                                                  decoration:
+                                                                      BoxDecoration(
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        200],
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .circular(5),
+                                                                  ),
+                                                                  width: 300,
+                                                                  height: orientation ==
+                                                                          Orientation
+                                                                              .portrait
+                                                                      ? 360
+                                                                      : 200,
+                                                                  child: GridView
+                                                                      .count(
+                                                                    crossAxisCount:
+                                                                        orientation ==
+                                                                                Orientation.portrait
+                                                                            ? 4
+                                                                            : 6,
+                                                                    crossAxisSpacing:
+                                                                        5,
+                                                                    mainAxisSpacing:
+                                                                        5,
+                                                                    children: [
+                                                                      for (Color color
+                                                                          in colors)
+                                                                        child(
+                                                                            color)
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              },
                                                               availableColors: const [
-                                                                Colors.white,
-                                                                Colors.yellow,
-                                                                Colors.orange,
                                                                 Colors.red,
                                                                 Colors.pink,
                                                                 Colors.purple,
+                                                                Colors
+                                                                    .deepPurple,
+                                                                Colors.indigo,
                                                                 Colors.blue,
                                                                 Colors
                                                                     .lightBlue,
+                                                                Colors.cyan,
+                                                                Colors.teal,
                                                                 Colors.green,
                                                                 Colors
                                                                     .lightGreen,
+                                                                Colors.lime,
+                                                                Colors.yellow,
+                                                                Colors.amber,
+                                                                Colors.orange,
+                                                                Colors
+                                                                    .deepOrange,
+                                                                Colors.brown,
+                                                                Colors.grey,
+                                                                Colors.blueGrey,
+                                                                Colors.white,
                                                               ],
                                                               pickerColor:
                                                                   pickerColor,

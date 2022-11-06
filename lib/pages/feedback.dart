@@ -70,9 +70,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                         controller: _controller,
                         textInputAction: TextInputAction.done,
                         validator: (String? text) {
-                          if (text == null ||
-                              text.isEmpty ||
-                              text.trim().isEmpty) {
+                          if (text == null || text.trim().isEmpty) {
                             return 'Please enter your feedback';
                           }
                           return null;
