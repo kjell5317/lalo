@@ -16,7 +16,7 @@
   "dependencies": {
     "firebase-functions": "^3.22.0",
     "node-hue-api": "^5.0.0-beta.13",
-    "firebase-admin": "^11.0.0"
+    "firebase-admin": "^11.5.0"
   },
   "devDependencies": {
     "@types/uuid": "^8.3.4",
