@@ -5,12 +5,12 @@
     
     
       
-      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000259">
+      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.006042919">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="1: cd .. &amp;&amp; git commit . -m &apos;Build $(pubver bump build)&apos;" time="0.038412">
+      <testcase classname="fastlane.lanes" name="1: cd .. &amp;&amp; pubver bump build" time="0.300262169">
         
       </testcase>
     

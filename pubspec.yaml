@@ -1,10 +1,10 @@
 name: lalo
-version: 0.0.13+19
+version: 0.0.13+20
 publish_to: none
 description: Leave a Light on
-environment:
-  sdk: ">=2.16.1 <3.0.0"
-dependencies:
+environment: 
+  sdk: '>=2.16.1 <3.0.0'
+dependencies: 
   cupertino_icons: ^1.0.2
   firebase_core: ^2.8.0
   cloud_firestore: ^4.4.5
@@ -24,21 +24,21 @@ dependencies:
   google_mobile_ads: ^2.4.0
   package_info_plus: ^3.1.2
   flutter_colorpicker: ^1.0.3
-  flutter:
+  flutter: 
     sdk: flutter
-  settings_ui:
-    git:
+  settings_ui: 
+    git: 
       url: https://github.com/yako-dev/flutter-settings-ui
       ref: dev
-dev_dependencies:
+dev_dependencies: 
   flutter_lints: ^2.0.1
   flutter_launcher_icons: ^0.12.0
-  flutter_test:
+  flutter_test: 
     sdk: flutter
-flutter:
+flutter: 
   uses-material-design: true
-flutter_icons:
+flutter_icons: 
   image_path: assets/icon/icon.png
   android: true
-assets:
+assets: 
   - .env
