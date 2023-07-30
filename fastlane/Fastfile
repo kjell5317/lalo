@@ -35,8 +35,7 @@ platform :android do
   end
 
   lane :increment do
-    sh("ls")
-    sh("cd .. && pubver bump build")
+    sh("cd .. && git commit . -m 'Build $(pubver bump build)'")
   end
 
   desc "Runs all the tests"
