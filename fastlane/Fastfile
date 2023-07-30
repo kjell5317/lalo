@@ -19,6 +19,7 @@ platform :android do
 
   desc "Distribute a new version to Firebase"
   lane :distribute do
+  increment()
     sh("firebase deploy")
     sh("flutter build appbundle --release")
         # build_android_app is a built-in fastlane action.
@@ -34,7 +35,7 @@ platform :android do
   end
 
   lane :increment do
-    sh('cd .. && git ci . -m "Build $(pubver bump build)"')
+    sh"'cd .. && pubver bump build")
   end
 
   desc "Runs all the tests"
