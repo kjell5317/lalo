@@ -6,16 +6,20 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:lalo/pages/loading.dart';
+import 'package:lalo/components/lalo_add_tile.dart';
+import 'package:lalo/pages/lalo_page.dart';
+import 'package:lalo/pages/subpages/loading.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:lalo/services/services.dart';
-import 'package:share_plus/share_plus.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatefulWidget implements LaloPage {
   const HomePage({Key? key}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
+
+  @override
+  String get name => 'Home';
 }
 
 class _HomePageState extends State<HomePage> {
@@ -45,40 +49,6 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _color[_user['uid']] = Colors.orange;
       });
-    }
-  }
-
-  Future<void> _createLink() async {
-    DocumentReference linkRef =
-        FirebaseFirestore.instance.collection('links').doc();
-    var body = {
-      'dynamicLinkInfo': {
-        'domainUriPrefix': 'https://app-lalo.tk/l',
-        'link': 'https://app-lalo.tk/?id=${linkRef.id}',
-        'androidInfo': {'androidPackageName': 'de.kjellhanken.lalo'},
-      },
-      'suffix': {'option': 'UNGUESSABLE'}
-    };
-    var res = await http.post(
-        Uri.parse(
-            'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAUKHRQtdn_rxwt4wGRzzMHVqrDLJSKND0'),
-        body: jsonEncode(body));
-    if (res.statusCode == 200) {
-      Share.share(
-              'Be my friend at Leave a Light on: ${jsonDecode(res.body)["shortLink"]}')
-          .then((_) {
-        linkRef.set({
-          'senderId': user!.uid,
-          'senderName': user!.displayName,
-          'time': DateTime.now().toUtc().millisecondsSinceEpoch
-        });
-        analytics!.logShare(
-            contentType: 'Friend Request', itemId: user!.uid, method: 'link');
-      });
-    } else {
-      Fluttertoast.showToast(
-          msg: res.statusCode.toString() + ': Could not create link',
-          timeInSecForIosWeb: 3);
     }
   }
 
@@ -132,12 +102,12 @@ class _HomePageState extends State<HomePage> {
                     child: Column(children: [
                       Text(
                         'Friend Request',
-                        style: Theme.of(context).textTheme.headline5,
+                        style: Theme.of(context).textTheme.headlineSmall,
                         textAlign: TextAlign.center,
                       ),
                       Text(
                         'from ${data["senderName"]}',
-                        style: Theme.of(context).textTheme.headline6,
+                        style: Theme.of(context).textTheme.titleLarge,
                         textAlign: TextAlign.center,
                       ),
                     ])),
@@ -320,43 +290,7 @@ class _HomePageState extends State<HomePage> {
                   .toList()
                   .cast<Widget>();
               if (snapshot.data['friends'].length < 10) {
-                tiles.add(InkWell(
-                    onTap: () {
-                      _createLink();
-                    },
-                    child: AspectRatio(
-                      aspectRatio: 1.0,
-                      child: Container(
-                        padding: const EdgeInsets.all(10.0),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[400],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                'Add a friend',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 24, color: Colors.white),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                    )));
+                tiles.add(const LaloAddTile());
               }
               return GridView.count(
                 primary: false,
