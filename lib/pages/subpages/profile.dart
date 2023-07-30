@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterfire_ui/auth.dart';
-import 'package:lalo/pages/login.dart';
+import 'package:lalo/pages/subpages/login.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({Key? key}) : super(key: key);

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:lalo/pages/login.dart';
+import 'package:lalo/pages/subpages/login.dart';
 import 'package:lalo/services/services.dart';
 
 class FeedbackPage extends StatefulWidget {
@@ -59,7 +59,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
               Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: Text('Feedback',
-                      style: Theme.of(context).textTheme.headline3)),
+                      style: Theme.of(context).textTheme.displaySmall)),
               Padding(
                   padding: const EdgeInsets.all(15.0),
                   child: Form(

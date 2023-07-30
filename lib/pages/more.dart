@@ -1,30 +1,43 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:lalo/pages/friend.dart';
-import 'package:lalo/pages/loading.dart';
+import 'package:lalo/pages/subpages/friend.dart';
+import 'package:lalo/pages/lalo_page.dart';
+import 'package:lalo/pages/subpages/loading.dart';
 import 'package:lalo/services/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class MorePage extends StatefulWidget {
+class MorePage extends StatefulWidget implements LaloPage {
   const MorePage({Key? key}) : super(key: key);
 
   @override
   State<MorePage> createState() => _MorePageState();
+
+  @override
+  String get name => 'More';
 }
 
 class _MorePageState extends State<MorePage> {
   String? version;
   String? buildNumber;
-  final String _url =
-      'https://api.meethue.com//v2/oauth2/authorize?client_id=wq9lMKlb0LypJeExHayCZgXLVQGPuInF&response_type=code&state=${user!.uid}';
+  final Uri _url = Uri(
+      scheme: 'https',
+      host: 'api.meethue.com',
+      path: 'v2/oauth2/authorize',
+      queryParameters: {
+        'client_id': 'wq9lMKlb0LypJeExHayCZgXLVQGPuInF',
+        'response_type': 'code',
+        'state': user!.uid
+      });
   var _serviceCaption = 'Connect Philips Hue';
 
   void _launchURL() async {
     if (_serviceCaption == 'Connect Philips Hue') {
-      if (!await launch(_url)) throw 'Could not launch Authentification Flow';
+      if (!await launchUrl(_url)) {
+        throw 'Could not launch Authentification Flow';
+      }
       Navigator.pop(context);
     } else if (_serviceCaption == 'Remove Philips Hue') {
       userRef?.set({
@@ -115,7 +128,7 @@ class _MorePageState extends State<MorePage> {
                                             'Connect a service to let your friends blink your light',
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .headline5,
+                                                .headlineSmall,
                                             textAlign: TextAlign.center,
                                           )),
                                       Padding(
@@ -170,8 +183,9 @@ class _MorePageState extends State<MorePage> {
                               Padding(
                                 padding: const EdgeInsets.all(15.0),
                                 child: Text('Choose a Light to blink',
-                                    style:
-                                        Theme.of(context).textTheme.headline5),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall),
                               ));
                           showModalBottomSheet<void>(
                             context: context,

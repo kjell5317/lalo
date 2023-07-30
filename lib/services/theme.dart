@@ -6,10 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 var themeLight = ThemeData(
     brightness: Brightness.light,
-    backgroundColor: Colors.white,
     bottomSheetTheme: BottomSheetThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-    colorScheme: ThemeData().colorScheme.copyWith(primary: Colors.orange),
     fontFamily: GoogleFonts.roboto().fontFamily,
     // fontFamily: kIsWeb && window.navigator.userAgent.contains('OS 15_')
     //     ? '-apple-system'
@@ -36,7 +34,11 @@ var themeLight = ThemeData(
         textStyle:
             MaterialStateProperty.all<TextStyle>(const TextStyle(fontSize: 20)),
       ),
-    ));
+    ),
+    colorScheme: ThemeData()
+        .colorScheme
+        .copyWith(primary: Colors.orange)
+        .copyWith(background: Colors.white));
 
 var themeDark = themeLight.copyWith(
     dialogBackgroundColor: Colors.grey[900],

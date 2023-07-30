@@ -7,3 +7,4 @@ bool waiting = false;
 User? user;
 DocumentReference? userRef;
 FirebaseAnalytics? analytics;
+String domain = 'app-lalo.tk';

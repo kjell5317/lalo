@@ -1,6 +1,6 @@
 import 'package:lalo/main.dart';
-import 'package:lalo/pages/feedback.dart';
-import 'package:lalo/pages/profile.dart';
+import 'package:lalo/pages/subpages/feedback.dart';
+import 'package:lalo/pages/subpages/profile.dart';
 
 var routes = {
   '/feedback': (context) => const FeedbackPage(),

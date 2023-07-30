@@ -1,49 +1,42 @@
 name: lalo
+version: 0.0.13+18
+publish_to: none
 description: Leave a Light on
-
-publish_to: "none" # Remove this line if you wish to publish to pub.dev
-
-version: 0.0.13+13
-
-environment:
-  sdk: ">=2.16.1 <3.0.0"
-
-dependencies:
-  flutter:
-    sdk: flutter
+environment: 
+  sdk: '>=2.16.1 <3.0.0'
+dependencies: 
   cupertino_icons: ^1.0.2
-  firebase_core: ^1.19.1
-  cloud_firestore: ^3.2.1
-  firebase_auth: ^3.4.1
+  firebase_core: ^2.8.0
+  cloud_firestore: ^4.4.5
+  firebase_auth: ^4.3.0
   google_sign_in: ^5.3.3
-  firebase_dynamic_links: ^4.3.1
-  firebase_crashlytics: ^2.8.4
-  google_fonts: ^2.3.1
-  font_awesome_flutter: ^9.2.0
+  firebase_dynamic_links: ^5.0.17
+  firebase_crashlytics: ^3.0.17
+  google_fonts: ^4.0.3
+  font_awesome_flutter: ^10.4.0
   flutterfire_ui: ^0.4.2+2
-  settings_ui:
-    git:
+  url_launcher: ^6.0.20
+  cloud_functions: ^4.0.13
+  fluttertoast: ^8.0.9
+  share_plus: ^6.3.4
+  firebase_analytics: ^10.1.6
+  flutter_dotenv: ^5.0.2
+  google_mobile_ads: ^2.4.0
+  package_info_plus: ^3.1.2
+  flutter_colorpicker: ^1.0.3
+  flutter: 
+    sdk: flutter
+  settings_ui: 
+    git: 
       url: https://github.com/yako-dev/flutter-settings-ui
       ref: dev
-  url_launcher: ^6.0.20
-  cloud_functions: ^3.2.11
-  fluttertoast: ^8.0.9
-  share_plus: ^4.0.10
-  firebase_analytics: ^9.1.12
-  flutter_dotenv: ^5.0.2
-  google_mobile_ads: ^1.3.0
-  package_info_plus: ^1.4.2
-  flutter_colorpicker: ^1.0.3
-
-dev_dependencies:
-  flutter_test:
+dev_dependencies: 
+  flutter_lints: ^2.0.1
+  flutter_launcher_icons: ^0.12.0
+  flutter_test: 
     sdk: flutter
-  flutter_lints: ^1.0.0
-  flutter_launcher_icons: ^0.9.3
-
-flutter:
+flutter: 
   uses-material-design: true
-
-flutter_icons:
+flutter_icons: 
+  image_path: assets/icon/icon.png
   android: true
-  image_path: "assets/icon/icon.png"

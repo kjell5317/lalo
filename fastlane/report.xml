@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="fastlane.lanes">
+    
+    
+    
+      
+      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000218">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="1: Switch to android increment lane" time="0.000163">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="2: cd .. &amp;&amp; pubver bump build" time="0.130377">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="3: flutter build appbundle --release" time="34.603387">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="4: firebase_app_distribution" time="55.677992">
+        
+      </testcase>
+    
+  </testsuite>
+</testsuites>

@@ -36,7 +36,7 @@ class _NamePageState extends State<NamePage> {
         Padding(
             padding: const EdgeInsets.all(10.0),
             child: Text('Your name',
-                style: Theme.of(context).textTheme.headline3)),
+                style: Theme.of(context).textTheme.displaySmall)),
         const Padding(
             padding: EdgeInsets.all(15.0),
             child: Text(

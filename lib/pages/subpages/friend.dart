@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:lalo/pages/loading.dart';
+import 'package:lalo/pages/subpages/loading.dart';
 import 'package:lalo/services/globals.dart';
 import 'package:settings_ui/settings_ui.dart';
 
