@@ -35,7 +35,7 @@ platform :android do
   end
 
   lane :increment do
-    puts ENV["PWD"]
+    sh("ls")
     sh("cd .. && pubver bump build")
   end
 

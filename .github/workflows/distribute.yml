@@ -14,4 +14,9 @@ jobs:
         with:
           ruby-version: "3.0"
           bundler-cache: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.7.8"
+          channel: "stable"
+      - run: pub global activate pubspec_version
       - run: bundle exec fastlane increment
