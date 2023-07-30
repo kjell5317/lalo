@@ -50,3 +50,6 @@ app.*.map.json
 google-services.json
 firebase_options.dart
 *.env
+
+# Fastlane
+fastlane/report.xml

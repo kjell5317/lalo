@@ -6,6 +6,7 @@ import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:lalo/components/lalo_app_bar.dart';
@@ -43,7 +44,7 @@ void main() async {
   } else if (Uri.base.queryParameters['id'] != null) {
     initialLink = Uri.base.queryParameters['id'];
   }
-
+  await dotenv.load(fileName: '.env');
   runApp(const App());
 }
 

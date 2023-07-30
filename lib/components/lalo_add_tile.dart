@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lalo/components/lalo_tile.dart';
 import 'package:lalo/services/globals.dart';
@@ -24,7 +25,7 @@ class LaloAddTile extends StatelessWidget {
     };
     var res = await http.post(
         Uri.parse(
-            'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAUKHRQtdn_rxwt4wGRzzMHVqrDLJSKND0'),
+            'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${dotenv.env["FIREBASE_DYN_LINK"]}'),
         body: jsonEncode(body));
     if (res.statusCode == 200) {
       Share.share(
