@@ -53,4 +53,4 @@ firebase_options.dart
 
 # Fastlane
 fastlane/report.xml
-vendor/
+/vendor/**
