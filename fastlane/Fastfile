@@ -35,7 +35,7 @@ platform :android do
   end
 
   lane :increment do
-    sh"'cd .. && pubver bump build")
+    sh("cd .. && pubver bump build")
   end
 
   desc "Runs all the tests"
