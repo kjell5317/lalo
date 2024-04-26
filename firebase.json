@@ -9,11 +9,18 @@
       "npm --prefix \"$RESOURCE_DIR\" run build"
     ]
   },
-  "hosting": {
-    "predeploy": "flutter build web",
-    "public": "build/web",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "appAssociation": "AUTO",
-    "rewrites": [{ "source": "/l/**", "dynamicLinks": true }]
-  }
+  "hosting": [
+    {
+      "target": "app",
+      "predeploy": "flutter build web",
+      "public": "build/web",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    },
+    {
+      "target": "link",
+      "ignore": ["*"],
+      "rewrites": [{ "source": "**", "dynamicLinks": true }],
+      "appAssociation": "AUTO"
+    }
+  ]
 }

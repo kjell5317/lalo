@@ -195,20 +195,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!kIsWeb) {
-        _stream = FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
-          initialLink = dynamicLink.link.queryParameters['id'];
-          _link();
-        });
-      }
-      _link();
-    });
-  }
-
-  @override
   void dispose() {
     super.dispose();
     _stream?.cancel();

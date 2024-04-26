@@ -17,15 +17,15 @@ class LaloAddTile extends StatelessWidget {
         FirebaseFirestore.instance.collection('links').doc();
     var body = {
       'dynamicLinkInfo': {
-        'domainUriPrefix': 'https://$domain/l',
-        'link': 'https://$domain/?id=${linkRef.id}',
+        'domainUriPrefix': 'https://link.$domain',
+        'link': 'https://app.$domain/?id=${linkRef.id}',
         'androidInfo': {'androidPackageName': 'de.kjellhanken.lalo'},
       },
       'suffix': {'option': 'UNGUESSABLE'}
     };
     var res = await http.post(
         Uri.parse(
-            'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${dotenv.env["FIREBASE_DYN_LINK"]}'),
+            'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAUKHRQtdn_rxwt4wGRzzMHVqrDLJSKND0'),
         body: jsonEncode(body));
     if (res.statusCode == 200) {
       Share.share(

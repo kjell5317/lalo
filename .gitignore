@@ -32,7 +32,6 @@
 /build/
 
 # Web related
-lib/generated_plugin_registrant.dart
 
 # Symbolication related
 app.*.symbols
@@ -54,3 +53,4 @@ firebase_options.dart
 # Fastlane
 fastlane/report.xml
 /vendor/**
+/.bundle/**

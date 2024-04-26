@@ -11,4 +11,4 @@ title: Leave a Light on
 
 [Playstore](https://play.google.com/store/apps/details?id=de.kjellhanken.lalo)
 
-[Web-App](https://app-lalo.tk)
+[Web-App](https://app.lalo.lighting)

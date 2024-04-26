@@ -1,5 +1,5 @@
 name: lalo
-version: 0.0.13+22
+version: 0.0.13+24
 publish_to: none
 description: Leave a Light on
 environment: 
@@ -40,5 +40,3 @@ flutter:
 flutter_icons: 
   image_path: assets/icon/icon.png
   android: true
-assets: 
-  - .env
