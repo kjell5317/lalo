@@ -1,9 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lalo/components/lalo_add_tile.dart';
@@ -116,11 +112,11 @@ class _HomePageState extends State<HomePage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                         fixedSize: const Size(200, 40)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10.0),
+                    child: const Padding(
+                      padding: EdgeInsets.all(10.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
+                        children: [
                           Text(
                             'Accept',
                             style: TextStyle(fontSize: 18),
@@ -137,11 +133,11 @@ class _HomePageState extends State<HomePage> {
                 ElevatedButton(
                   style:
                       ElevatedButton.styleFrom(fixedSize: const Size(200, 40)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
+                  child: const Padding(
+                    padding: EdgeInsets.all(10.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Text('Deny', style: TextStyle(fontSize: 18)),
                         Icon(Icons.close)
                       ],
