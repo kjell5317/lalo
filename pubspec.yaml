@@ -2,41 +2,41 @@ name: lalo
 version: 0.0.13+29
 publish_to: none
 description: Leave a Light on
-environment: 
-  sdk: '>=2.16.1 <3.0.0'
-dependencies: 
-  cupertino_icons: ^1.0.2
-  firebase_core: ^2.8.0
-  cloud_firestore: ^4.4.5
-  firebase_auth: ^4.3.0
-  google_sign_in: ^5.3.3
-  firebase_crashlytics: ^3.0.17
-  google_fonts: ^4.0.3
-  font_awesome_flutter: ^10.4.0
-  flutterfire_ui: ^0.4.2+2
-  url_launcher: ^6.0.20
-  cloud_functions: ^4.0.13
-  fluttertoast: ^8.0.9
-  share_plus: ^6.3.4
-  firebase_analytics: ^10.1.6
-  flutter_dotenv: ^5.0.2
-  google_mobile_ads: ^2.4.0
-  package_info_plus: ^3.1.2
-  flutter_colorpicker: ^1.0.3
-  http: ^0.13.6
-  flutter: 
+environment:
+  sdk: ">=2.16.1 <3.0.0"
+dependencies:
+  cloud_firestore: ^5.6.9
+  cloud_functions: ^5.5.2
+  cupertino_icons: ^1.0.8
+  firebase_core: ^3.14.0
+  firebase_auth: ^5.6.0
+  firebase_ui_auth: ^1.17.0
+  google_sign_in: ^6.3.0
+  firebase_crashlytics: ^4.3.7
+  firebase_analytics: ^11.5.0
+  google_mobile_ads: ^6.0.0
+  google_fonts: ^6.2.1
+  font_awesome_flutter: ^10.8.0
+  url_launcher: ^6.3.1
+  share_plus: ^11.0.0
+  package_info_plus: ^8.3.0
+  flutter_dotenv: ^5.2.1
+  flutter_colorpicker: ^1.1.0
+  fluttertoast: ^8.2.12
+  http: ^1.4.0
+  flutter:
     sdk: flutter
-  settings_ui: 
-    git: 
+  settings_ui:
+    git:
       url: https://github.com/yako-dev/flutter-settings-ui
       ref: dev
-dev_dependencies: 
+dev_dependencies:
   flutter_lints: ^2.0.1
   flutter_launcher_icons: ^0.12.0
-  flutter_test: 
+  flutter_test:
     sdk: flutter
-flutter: 
+flutter:
   uses-material-design: true
-flutter_icons: 
+flutter_icons:
   image_path: assets/icon/icon.png
   android: true
