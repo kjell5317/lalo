@@ -2,11 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:lalo/components/lalo_app_bar.dart';
@@ -28,20 +26,7 @@ void main() async {
   analytics = FirebaseAnalytics.instance;
 
   if (!kIsWeb) {
-    initialLink = await FirebaseDynamicLinks.instance
-        .getInitialLink()
-        .then((dynamicLink) {
-      var link = dynamicLink?.link.queryParameters['id'];
-      Fluttertoast.showToast(msg: link ?? '??');
-      return link;
-    });
-    FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
-      var link = dynamicLink.link.queryParameters['id'];
-      Fluttertoast.showToast(msg: link ?? '??');
-      if (link != initialLink) {
-        initialLink = link;
-      }
-    });
+    // TODO: Add support for deep links
 
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
     MobileAds.instance.initialize();
