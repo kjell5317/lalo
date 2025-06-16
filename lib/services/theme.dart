@@ -26,22 +26,21 @@ var themeLight = ThemeData(
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all<Color>(Colors.orange),
-        foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-        padding: MaterialStateProperty.all<EdgeInsets>(
+        backgroundColor: WidgetStateProperty.all<Color>(Colors.orange),
+        foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
+        padding: WidgetStateProperty.all<EdgeInsets>(
           const EdgeInsets.all(15),
         ),
         textStyle:
-            MaterialStateProperty.all<TextStyle>(const TextStyle(fontSize: 20)),
+            WidgetStateProperty.all<TextStyle>(const TextStyle(fontSize: 20)),
       ),
     ),
     colorScheme: ThemeData()
         .colorScheme
         .copyWith(primary: Colors.orange)
-        .copyWith(background: Colors.white));
+        .copyWith(surface: Colors.white));
 
 var themeDark = themeLight.copyWith(
-    dialogBackgroundColor: Colors.grey[900],
     bottomSheetTheme: themeLight.bottomSheetTheme.copyWith(
       backgroundColor: Colors.grey[900],
     ),
@@ -60,4 +59,5 @@ var themeDark = themeLight.copyWith(
       selectedItemColor: Colors.orange,
       backgroundColor: Colors.grey[900],
       unselectedItemColor: Colors.grey[100],
-    ));
+    ),
+    dialogTheme: DialogThemeData(backgroundColor: Colors.grey[900]));

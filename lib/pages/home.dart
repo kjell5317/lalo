@@ -32,27 +32,27 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _blink(Map<String, dynamic> _user) async {
+  Future<void> _blink(Map<String, dynamic> user) async {
     var resp = await FirebaseFunctions.instance
         .httpsCallable('blink')
         .call(<String, String>{
-      'userId': _user['uid'],
-      'userName': _user['name'],
+      'userId': user['uid'],
+      'userName': user['name'],
       'me': user!.uid,
     });
     if (resp.data != null) {
       Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
       setState(() {
-        _color[_user['uid']] = Colors.orange;
+        _color[user['uid']] = Colors.orange;
       });
     }
   }
 
-  Future<void> _accept(String _link) async {
-    print(_link);
+  Future<void> _accept(String link) async {
+    print(link);
     Navigator.pop(context);
     String? senderId;
-    await FirebaseFirestore.instance.doc('links/$_link').get().then((data) {
+    await FirebaseFirestore.instance.doc('links/$link').get().then((data) {
       senderId = data['senderId'];
       if (data['senderId'] == null) return;
       userRef!.update({
@@ -72,13 +72,13 @@ class _HomePageState extends State<HomePage> {
       'friendId': user!.uid,
       'friendName': user!.displayName ?? '',
     });
-    FirebaseFirestore.instance.doc('links/$_link').delete();
+    FirebaseFirestore.instance.doc('links/$link').delete();
     Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
   }
 
-  void _modal(String _link) async {
+  void _modal(String link) async {
     DocumentSnapshot<Map<String, dynamic>> data =
-        await FirebaseFirestore.instance.doc('links/$_link').get();
+        await FirebaseFirestore.instance.doc('links/$link').get();
     showModalBottomSheet<void>(
       isDismissible: false,
       context: context,
@@ -126,7 +126,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     onPressed: () {
-                      _accept(_link);
+                      _accept(link);
                     },
                   ),
                 ),
@@ -144,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   onPressed: () {
-                    FirebaseFirestore.instance.doc('links/$_link').delete();
+                    FirebaseFirestore.instance.doc('links/$link').delete();
                     Navigator.pop(context);
                   },
                 ),
