@@ -10,15 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.7"
+          ruby-version: "3.3"
+          bundler-cache: true
       - name: install firebase tool
         run: |
           yarn global add firebase-tools
           echo "::add-path::$(yarn global bin)"
-      - name: setup fastlane
-        run: bundle install
       - name: distribute to firebase
         run: bundle exec fastlane distribute
         env:
