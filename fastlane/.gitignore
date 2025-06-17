@@ -1,5 +1,5 @@
 # Fastlane
-fastlane/report.xml
+report.xml
 /vendor/**
 /.bundle/**
 *.env

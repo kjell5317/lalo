@@ -29,23 +29,7 @@ Distribute a new version to Firebase
 [bundle exec] fastlane android increment
 ```
 
-
-
-### android test
-
-```sh
-[bundle exec] fastlane android test
-```
-
-Runs all the tests
-
-### android deploy
-
-```sh
-[bundle exec] fastlane android deploy
-```
-
-Deploy a new version to the Google Play
+Bump the build number
 
 ----
 

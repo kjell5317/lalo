@@ -33,6 +33,7 @@ platform :android do
         )
   end
 
+  desc "Bump the build number"
   lane :increment do
     sh("cd .. && cider bump build")
   end
