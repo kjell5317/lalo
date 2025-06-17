@@ -138,7 +138,7 @@ export const blink = functions.https.onCall((data) => {
      * @return {[int, int, int]} rgb
      */
   function hexToRgb(hex: string) {
-    const result = hex.match(/[0-F]{1,2}/gi);
+    const result = hex.match(/[0-9A-Fa-f]{1,2}/g);
     return [
       parseInt(result![0], 16),
       parseInt(result![1], 16),
