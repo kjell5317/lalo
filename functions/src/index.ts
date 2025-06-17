@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { v3 } from "node-hue-api";
 import { Api } from "node-hue-api/dist/esm/api/Api";
+import {onSchedule} from "firebase-functions/v2/scheduler";
 
 const CLIENT_ID = "wq9lMKlb0LypJeExHayCZgXLVQGPuInF";
 const CLIENT_SECRET = "0nbdixBERjkgJClS";
@@ -46,15 +47,15 @@ export const callback = functions.https.onRequest((req, res) => {
 });
 
 // Blink light
-export const blink = functions.https.onCall((data) => {
+export const blink = functions.https.onCall((request) => {
   let x = 0;
-  return db.doc(`users/${data.userId}`).get().then((snapshot: any) => {
+  return db.doc(`users/${request.data.userId}`).get().then((snapshot: any) => {
     if (snapshot.exists) {
       for (const permission of snapshot.data().permissions) {
-        if (permission.uid === data.me) {
+        if (permission.uid === request.data.me) {
           if (snapshot.data().api.name === "No services connected") return "Friend has no light";
           if (snapshot.data().dnd === true || Date.now() - snapshot.data().light.last < 30 * 1000) return;
-          db.doc(`users/${data.userId}`).update({ "light.last": Date.now() });
+          db.doc(`users/${request.data.userId}`).update({ "light.last": Date.now() });
           if (snapshot.data().api.name === "Philips Hue") {
             const cred = snapshot.data().api.credentials;
             if (!cred) return "Could not connect to light";
@@ -82,9 +83,9 @@ export const blink = functions.https.onCall((data) => {
           } else return "Could not connect to light";
         }
       }
-      return removeFriend(data);
+      return removeFriend(request.data);
     } else {
-      return removeFriend(data);
+      return removeFriend(request.data);
     }
   }).catch((e: any) => {
     console.error(e);
@@ -138,7 +139,7 @@ export const blink = functions.https.onCall((data) => {
      * @return {[int, int, int]} rgb
      */
   function hexToRgb(hex: string) {
-    const result = hex.match(/[0-F]{1,2}/gi);
+    const result = hex.match(/[0-9a-fA-F]{1,2}/g);
     return [
       parseInt(result![0], 16),
       parseInt(result![1], 16),
@@ -148,11 +149,11 @@ export const blink = functions.https.onCall((data) => {
 });
 
 // Accept friend request
-export const accept = functions.https.onCall((data) => {
-  return db.doc(`users/${data.senderId}`).update({
+export const accept = functions.https.onCall((request) => {
+  return db.doc(`users/${request.data.senderId}`).update({
     "friends": admin.firestore.FieldValue.arrayUnion({
-      "name": data.friendName,
-      "uid": data.friendId
+      "name": request.data.friendName,
+      "uid": request.data.friendId
     })
   }).then(() => "Request accepted").catch((e: any) => {
     console.error(e);
@@ -160,7 +161,7 @@ export const accept = functions.https.onCall((data) => {
   });
 });
 
-export const refresh = functions.pubsub.schedule("1, 7, 13, 19, 25, 31 of month 00:00").timeZone("Europe/Berlin").onRun(async (context) => {
+export const refresh = onSchedule("1, 7, 13, 19, 25, 31 of month 00:00", (async (context) => {
   await db.collection("users")
       .where("api.credentials.tokens.access.expiresAt", "<", Date.now() + 6 * 24 * 60 * 60 * 1000)
       .get().then((result) => {
@@ -192,4 +193,4 @@ export const refresh = functions.pubsub.schedule("1, 7, 13, 19, 25, 31 of month 
   }).catch((e) => {
     console.error(e);
   });
-});
+}));
