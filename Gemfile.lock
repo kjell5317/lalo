@@ -4,7 +4,7 @@ GEM
     CFPropertyList (3.0.7)
       base64
       nkf
-      rexml (>= 3.3.9, < 4.0.0)
+      rexml
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
     artifactory (3.0.17)
