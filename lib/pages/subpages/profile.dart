@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutterfire_ui/auth.dart';
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:lalo/pages/subpages/login.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -15,13 +15,6 @@ class ProfilePage extends StatelessWidget {
             SignedOutAction((context) {
               Navigator.pushReplacementNamed(context, '/home');
             }),
-          ],
-          providerConfigs: const [
-            EmailProviderConfiguration(),
-            GoogleProviderConfiguration(
-              clientId:
-                  '996256225333-pf7pkq5ru9i6v85qdog3fl5vgub99l6a.apps.googleusercontent.com',
-            ),
           ]);
     } else {
       return const LoginPage();

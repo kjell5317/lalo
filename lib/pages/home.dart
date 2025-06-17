@@ -32,18 +32,18 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _blink(Map<String, dynamic> user) async {
+  Future<void> _blink(Map<String, dynamic> friend) async {
     var resp = await FirebaseFunctions.instance
         .httpsCallable('blink')
         .call(<String, String>{
-      'userId': user['uid'],
-      'userName': user['name'],
+      'userId': friend['uid'],
+      'userName': friend['name'],
       'me': user!.uid,
     });
     if (resp.data != null) {
       Fluttertoast.showToast(msg: resp.data, timeInSecForIosWeb: 3);
       setState(() {
-        _color[user['uid']] = Colors.orange;
+        _color[friend['uid']] = Colors.orange;
       });
     }
   }

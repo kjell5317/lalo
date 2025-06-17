@@ -15,12 +15,6 @@
       "predeploy": "flutter build web",
       "public": "build/web",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
-    },
-    {
-      "target": "link",
-      "ignore": ["*"],
-      "rewrites": [{ "source": "**", "dynamicLinks": true }],
-      "appAssociation": "AUTO"
     }
   ]
 }

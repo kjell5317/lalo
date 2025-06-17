@@ -30,7 +30,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    ndkVersion "25.0.8775105"
+    namespace "de.kjellhanken.lalo"
+    ndkVersion "29.0.13599879rc2"
     compileSdkVersion flutter.compileSdkVersion
 
     compileOptions {
@@ -48,7 +49,7 @@ android {
 
     defaultConfig {
         applicationId "de.kjellhanken.lalo"
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 23
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

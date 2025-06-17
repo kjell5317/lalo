@@ -1,9 +1,11 @@
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';
+import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -24,6 +26,12 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   analytics = FirebaseAnalytics.instance;
+  FirebaseUIAuth.configureProviders([
+    GoogleProvider(
+        clientId:
+            '996256225333-pf7pkq5ru9i6v85qdog3fl5vgub99l6a.apps.googleusercontent.com'),
+    EmailAuthProvider(),
+  ]);
 
   if (!kIsWeb) {
     // TODO: Add support for deep links

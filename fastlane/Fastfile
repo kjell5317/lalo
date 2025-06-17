@@ -24,29 +24,16 @@ platform :android do
     sh("flutter build appbundle --release")
         # build_android_app is a built-in fastlane action.
         release = firebase_app_distribution(
-            app: "1:996256225333:android:4272519e77f553096ef97c",
+            app: ENV["FIREBASE_APP_ID"],
             testers: "kjell5317@gmail.com",
             release_notes: "Lots of amazing new features to test out!",
             android_artifact_type: "AAB",
-            firebase_cli_path: "/usr/local/bin/firebase",
             android_artifact_path: "build/app/outputs/bundle/release/app-release.aab",
             firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"]
         )
   end
 
   lane :increment do
-    sh("cd .. && pubver bump build")
-  end
-
-  desc "Runs all the tests"
-  lane :test do
-    sh("flutter test")
-  end
-
-  desc "Deploy a new version to the Google Play"
-  lane :deploy do
-    sh("firebase deploy")
-    sh("flutter build appbundle --release")
-    # upload_to_play_store
+    sh("cd .. && cider bump build")
   end
 end

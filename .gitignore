@@ -30,6 +30,7 @@
 .pub-cache/
 .pub/
 /build/
+!/build/app//outputs/bundle/release/app-release.aab
 
 # Web related
 
@@ -49,8 +50,3 @@ app.*.map.json
 google-services.json
 firebase_options.dart
 *.env
-
-# Fastlane
-fastlane/report.xml
-/vendor/**
-/.bundle/**

@@ -1,7 +1,8 @@
 {
   "name": "functions",
   "scripts": {
-    "lint": "eslint --ext .js,.ts .",
+    "lint:fix": "eslint --ext .js,.ts . --fix",
+    "lint": "eslint --quiet --ext .js,.ts .",
     "build": "tsc",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
@@ -10,13 +11,13 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "16"
+    "node": "22"
   },
   "main": "lib/index.js",
   "dependencies": {
-    "firebase-functions": "^3.22.0",
-    "node-hue-api": "^5.0.0-beta.13",
-    "firebase-admin": "^11.4.1"
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^6.3.2",
+    "node-hue-api": "^5.0.0-beta.13"
   },
   "devDependencies": {
     "@types/uuid": "^8.3.4",

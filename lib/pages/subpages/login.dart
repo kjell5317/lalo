@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutterfire_ui/auth.dart';
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:lalo/services/globals.dart';
 
@@ -22,13 +22,6 @@ class LoginPage extends StatelessWidget {
           Navigator.of(context).pushReplacementNamed('/home');
           analytics!.logLogin();
         })
-      ],
-      providerConfigs: const [
-        EmailProviderConfiguration(),
-        GoogleProviderConfiguration(
-          clientId:
-              '996256225333-pf7pkq5ru9i6v85qdog3fl5vgub99l6a.apps.googleusercontent.com',
-        ),
       ],
     );
   }
