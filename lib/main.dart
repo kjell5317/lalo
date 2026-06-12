@@ -27,32 +27,27 @@ void main() async {
   );
   analytics = FirebaseAnalytics.instance;
   FirebaseUIAuth.configureProviders([
-    GoogleProvider(
-        clientId:
-            '996256225333-pf7pkq5ru9i6v85qdog3fl5vgub99l6a.apps.googleusercontent.com'),
+    GoogleProvider(clientId: googleClientId),
     EmailAuthProvider(),
   ]);
 
+  await initDeepLinks();
   if (!kIsWeb) {
-    // TODO: Add support for deep links
-
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
     MobileAds.instance.initialize();
-  } else if (Uri.base.queryParameters['id'] != null) {
-    initialLink = Uri.base.queryParameters['id'];
   }
   runApp(const App());
 }
 
 class App extends StatefulWidget {
-  const App({Key? key}) : super(key: key);
+  const App({super.key});
   static const List<LaloPage> _pages = [HomePage(), MorePage()];
 
   @override
   State<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> with WidgetsBindingObserver {
+class _AppState extends State<App> {
   BannerAd? _ad;
 
   int _i = 0;
@@ -63,7 +58,10 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   }
 
   void setInitialData() {
-    analytics!.logSignUp(signUpMethod: user!.providerData[0].providerId);
+    analytics!.logSignUp(
+        signUpMethod: user!.providerData.isNotEmpty
+            ? user!.providerData[0].providerId
+            : 'unknown');
     userRef?.set({
       'light': {'name': 'Not selected', 'id': '', 'last': 0, 'color': false},
       'api': {'name': 'No services connected'},
@@ -75,8 +73,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    super.dispose();
     _ad?.dispose();
+    super.dispose();
   }
 
   @override
@@ -84,7 +82,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     super.initState();
     if (!kIsWeb) {
       BannerAd(
-        adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+        adUnitId: bannerAdUnitId,
         size: AdSize.banner,
         request: const AdRequest(),
         listener: BannerAdListener(onAdLoaded: (ad) {
@@ -140,26 +138,17 @@ class _AppState extends State<App> with WidgetsBindingObserver {
                         name: App._pages[_i].name,
                       ),
                       body: Column(children: [
-                        Builder(builder: (context) {
-                          if (!kIsWeb && _ad != null) {
-                            return Padding(
-                                padding: const EdgeInsets.only(top: 20.0),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  width: _ad!.size.width.toDouble(),
-                                  height: _ad!.size.height.toDouble(),
-                                  child: AdWidget(ad: _ad!),
-                                ));
-                          } else {
-                            return const SizedBox.shrink();
-                          }
-                        }),
+                        if (!kIsWeb && _ad != null)
+                          Padding(
+                              padding: const EdgeInsets.only(top: 20.0),
+                              child: Container(
+                                alignment: Alignment.center,
+                                width: _ad!.size.width.toDouble(),
+                                height: _ad!.size.height.toDouble(),
+                                child: AdWidget(ad: _ad!),
+                              )),
                         Expanded(
-                          child: IndexedStack(index: _i, children: [
-                            for (int j = 0; j < App._pages.length; j++) ...[
-                              App._pages[j]
-                            ]
-                          ]),
+                          child: IndexedStack(index: _i, children: App._pages),
                         ),
                       ]),
                       bottomNavigationBar: BottomNavigationBar(

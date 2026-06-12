@@ -1,6 +1,3 @@
-// ignore: avoid_web_libraries_in_flutter
-// import 'dart:html';
-// import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,9 +6,6 @@ var themeLight = ThemeData(
     bottomSheetTheme: BottomSheetThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
     fontFamily: GoogleFonts.roboto().fontFamily,
-    // fontFamily: kIsWeb && window.navigator.userAgent.contains('OS 15_')
-    //     ? '-apple-system'
-    //     : GoogleFonts.roboto().fontFamily,
     appBarTheme: AppBarTheme(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         backgroundColor: Colors.orange,

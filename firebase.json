@@ -15,7 +15,15 @@
       "target": "app",
       "predeploy": "flutter build web",
       "public": "build/web",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+      "ignore": ["firebase.json", "**/node_modules/**"],
+      "headers": [
+        {
+          "source": "/.well-known/assetlinks.json",
+          "headers": [
+            { "key": "Content-Type", "value": "application/json" }
+          ]
+        }
+      ]
     }
   ]
 }

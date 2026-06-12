@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lalo/services/globals.dart';
 
 class LaloAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const LaloAppBar({Key? key, required this.name}) : super(key: key);
+  const LaloAppBar({super.key, required this.name});
   final String name;
 
   @override
@@ -20,7 +20,9 @@ class LaloAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: Text(
                 user!.displayName?.substring(0, 2).toUpperCase() ?? 'HI',
                 style: const TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

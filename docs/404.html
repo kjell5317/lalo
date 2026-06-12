@@ -1,25 +1,42 @@
----
-permalink: /404.html
-layout: default
----
-
-<style type="text/css" media="screen">
-  .container {
-    margin: 10px auto;
-    max-width: 600px;
-    text-align: center;
-  }
-  h1 {
-    margin: 30px 0;
-    font-size: 4em;
-    line-height: 1;
-    letter-spacing: -1px;
-  }
-</style>
-
-<div class="container">
-  <h1>404</h1>
-
-  <p><strong>Page not found :(</strong></p>
-  <p>The requested page could not be found.</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page not found — Leave a Light on</title>
+  <link rel="icon" type="image/png" href="/icon.png" />
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0e0f13;
+      color: #f4f4f6;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+    .bulb { font-size: 64px; opacity: 0.4; }
+    h1 { margin: 16px 0 8px; }
+    p { color: #9aa0ae; }
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      color: #1b1300;
+      background: linear-gradient(135deg, #ffa726, #fb8c00);
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="bulb">💡</div>
+    <h1>404 — this light is off</h1>
+    <p>The page you are looking for does not exist.</p>
+    <a href="/">Back to Leave a Light on</a>
+  </div>
+</body>
+</html>

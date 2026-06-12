@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leave a Light on — blink the lights of the people you love</title>
+  <meta name="description" content="Leave a Light on lets you blink the smart lights of friends and loved ones when you are thinking about them. Free for Android and the web." />
+  <link rel="icon" type="image/png" href="icon.png" />
+  <meta property="og:title" content="Leave a Light on" />
+  <meta property="og:description" content="Blink the lights of your most important people — a tiny signal that says: I'm thinking of you." />
+  <meta property="og:image" content="https://lalo.lighting/icon.png" />
+  <meta property="og:url" content="https://lalo.lighting" />
+  <style>
+    :root {
+      --bg: #0e0f13;
+      --bg-soft: #16181f;
+      --card: #1c1f28;
+      --text: #f4f4f6;
+      --muted: #9aa0ae;
+      --accent: #ffa726;
+      --accent-deep: #fb8c00;
+      --radius: 20px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+
+    header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px clamp(20px, 6vw, 72px);
+      background: rgba(14, 15, 19, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.05rem; color: var(--text); }
+    .brand img { width: 34px; height: 34px; border-radius: 9px; }
+    nav a { color: var(--muted); margin-left: 26px; font-size: 0.95rem; transition: color 0.2s; }
+    nav a:hover { color: var(--text); }
+
+    .hero {
+      display: grid; place-items: center; text-align: center;
+      padding: clamp(70px, 12vh, 130px) 20px 60px;
+      background:
+        radial-gradient(600px 320px at 50% 0%, rgba(255, 167, 38, 0.18), transparent 70%),
+        var(--bg);
+    }
+    .bulb {
+      font-size: 76px;
+      filter: drop-shadow(0 0 24px rgba(255, 167, 38, 0.55));
+      animation: glow 2.6s ease-in-out infinite;
+    }
+    @keyframes glow {
+      0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 167, 38, 0.25)); opacity: 0.85; }
+      50% { filter: drop-shadow(0 0 32px rgba(255, 167, 38, 0.8)); opacity: 1; }
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5.5vw, 3.6rem);
+      line-height: 1.15;
+      margin: 22px auto 16px;
+      max-width: 780px;
+      letter-spacing: -0.02em;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero p.sub { color: var(--muted); font-size: 1.15rem; max-width: 620px; margin: 0 auto 36px; }
+    .cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 26px; border-radius: 14px; font-weight: 600; font-size: 1rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #1b1300;
+      box-shadow: 0 8px 28px rgba(251, 140, 0, 0.35);
+    }
+    .btn.ghost { border: 1px solid rgba(255, 255, 255, 0.18); color: var(--text); background: var(--bg-soft); }
+
+    section { padding: 80px clamp(20px, 6vw, 72px); }
+    section h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); margin-bottom: 12px; letter-spacing: -0.01em; }
+    section p.lead { color: var(--muted); max-width: 640px; margin-bottom: 44px; }
+
+    .grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .card {
+      background: var(--card); border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius); padding: 28px;
+    }
+    .card .icon { font-size: 30px; margin-bottom: 14px; display: block; }
+    .card h3 { font-size: 1.1rem; margin-bottom: 8px; }
+    .card p { color: var(--muted); font-size: 0.95rem; }
+
+    .steps { counter-reset: step; display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+    .step {
+      background: var(--bg-soft); border-radius: var(--radius); padding: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.05); position: relative;
+    }
+    .step::before {
+      counter-increment: step; content: counter(step);
+      display: inline-grid; place-items: center;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--accent); color: #1b1300; font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .step h3 { font-size: 1.05rem; margin-bottom: 6px; }
+    .step p { color: var(--muted); font-size: 0.95rem; }
+
+    .banner {
+      text-align: center;
+      background:
+        radial-gradient(500px 260px at 50% 100%, rgba(255, 167, 38, 0.14), transparent 70%),
+        var(--bg-soft);
+      border-radius: var(--radius);
+      margin: 0 clamp(20px, 6vw, 72px) 80px;
+      padding: 70px 24px;
+    }
+    .banner h2 { margin-bottom: 10px; }
+    .banner p { color: var(--muted); margin-bottom: 30px; }
+
+    footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 34px clamp(20px, 6vw, 72px);
+      display: flex; flex-wrap: wrap; gap: 16px;
+      align-items: center; justify-content: space-between;
+      color: var(--muted); font-size: 0.9rem;
+    }
+    footer .links a { color: var(--muted); margin-left: 20px; }
+    footer .links a:hover { color: var(--text); }
+    @media (max-width: 560px) {
+      nav { display: none; }
+      footer { justify-content: center; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="#">
+      <img src="icon.png" alt="Leave a Light on logo" />
+      Leave a Light on
+    </a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="https://github.com/kjell5317/app-lalo">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div class="bulb" aria-hidden="true">💡</div>
+      <h1>Blink the lights of the people <em>you love</em></h1>
+      <p class="sub">
+        A tap in the app — and a lamp lights up in your loved one's living room.
+        Leave a Light on turns smart lights into a tiny signal that says:
+        <strong>I'm thinking of you.</strong>
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="https://play.google.com/store/apps/details?id=de.kjellhanken.lalo">
+          ▶ Get it on Google Play
+        </a>
+        <a class="btn ghost" href="https://app.lalo.lighting">
+          🌐 Open the Web App
+        </a>
+      </div>
+    </div>
+
+    <section id="features">
+      <h2>Closeness, one blink away</h2>
+      <p class="lead">No messages, no notifications, no pressure to reply. Just light.</p>
+      <div class="grid">
+        <div class="card">
+          <span class="icon">🔗</span>
+          <h3>Connect Philips Hue</h3>
+          <p>Link your Philips Hue account in seconds. Pick the lamp your friends are allowed to blink.</p>
+        </div>
+        <div class="card">
+          <span class="icon">🧑‍🤝‍🧑</span>
+          <h3>Invite your people</h3>
+          <p>Share a personal invite link. Only friends who you accept can ever reach your light.</p>
+        </div>
+        <div class="card">
+          <span class="icon">🎨</span>
+          <h3>A color for everyone</h3>
+          <p>Give each friend their own color, so you always know who is thinking of you right now.</p>
+        </div>
+        <div class="card">
+          <span class="icon">🌙</span>
+          <h3>Do Not Disturb</h3>
+          <p>Need quiet? Flip one switch and your light stays calm until you're ready again.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="how">
+      <h2>How it works</h2>
+      <p class="lead">From install to the first blink in under five minutes.</p>
+      <div class="steps">
+        <div class="step">
+          <h3>Create your account</h3>
+          <p>Sign up with your email address or your Google account — on Android or right in the browser.</p>
+        </div>
+        <div class="step">
+          <h3>Connect your light</h3>
+          <p>Log in to Philips Hue once and choose the lamp you want to share.</p>
+        </div>
+        <div class="step">
+          <h3>Add your friends</h3>
+          <p>Send an invite link. When your friend accepts, you appear on each other's home screen.</p>
+        </div>
+        <div class="step">
+          <h3>Blink away</h3>
+          <p>Tap a friend's tile and their lamp blinks in your color. That's it — that's the app.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="banner">
+      <h2>Someone is thinking of you ✨</h2>
+      <p>Free to use. Works with Philips Hue. Android &amp; Web.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://play.google.com/store/apps/details?id=de.kjellhanken.lalo">
+          ▶ Get it on Google Play
+        </a>
+        <a class="btn ghost" href="https://app.lalo.lighting">🌐 Open the Web App</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>© 2026 Kjell Hanken · Leave a Light on</span>
+    <span class="links">
+      <a href="https://github.com/kjell5317/app-lalo">Source code</a>
+      <a href="datenschutz.html">Datenschutz</a>
+      <a href="mailto:lalo@kjellhanken.de">Contact</a>
+    </span>
+  </footer>
+</body>
+</html>

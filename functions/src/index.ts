@@ -1,196 +1,249 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { v3 } from "node-hue-api";
-import { Api } from "node-hue-api/dist/esm/api/Api";
+import {defineSecret} from "firebase-functions/params";
 import {onSchedule} from "firebase-functions/v2/scheduler";
+import {v3} from "node-hue-api";
+import {Api} from "node-hue-api/dist/esm/api/Api";
 
-const CLIENT_ID = "wq9lMKlb0LypJeExHayCZgXLVQGPuInF";
-const CLIENT_SECRET = "0nbdixBERjkgJClS";
-const remoteBootstrap = v3.api.createRemote(CLIENT_ID, CLIENT_SECRET);
+// Public OAuth client id of the Hue Remote API app; the secret is managed
+// with `firebase functions:secrets:set HUE_CLIENT_SECRET` (see SETUP.md).
+const HUE_CLIENT_ID = "wq9lMKlb0LypJeExHayCZgXLVQGPuInF";
+const hueClientSecret = defineSecret("HUE_CLIENT_SECRET");
+
+const APP_URL = "https://app.lalo.lighting";
 
 if (admin.apps.length === 0) {
   admin.initializeApp();
 }
 const db = admin.firestore();
-db.settings({ ignoreUndefinedProperties: true })
+db.settings({ignoreUndefinedProperties: true});
 
-// Create credetials
-export const callback = functions.https.onRequest((req, res) => {
-  const user = req.query.state;
-  const authorizationCode = req.query.code?.toString();
-  if (user == null || authorizationCode == null || !db.doc(`users/${user}`).get().then((snapshot: any) => snapshot.exists)) {
-    res.send("Error!")
-  }
-  remoteBootstrap.connectWithCode(authorizationCode!)
-      .then((api: Api) => {
+/**
+ * Creates a Hue Remote API bootstrap. Must be called inside a function
+ * handler because the secret is only available at runtime.
+ * @return {object} remote bootstrap
+ */
+function hueRemote() {
+  return v3.api.createRemote(HUE_CLIENT_ID, hueClientSecret.value());
+}
+
+/**
+ * Converts a HEX color to RGB.
+ * @param {string} hex color like "ff8800"
+ * @return {number[]} [r, g, b]
+ */
+function hexToRgb(hex: string): number[] {
+  const result = hex.match(/[0-9a-fA-F]{1,2}/g);
+  return [
+    parseInt(result![0], 16),
+    parseInt(result![1], 16),
+    parseInt(result![2], 16),
+  ];
+}
+
+// OAuth callback of the Hue Remote API: exchanges the authorization code for
+// tokens, stores them together with the user's lights and sends the user
+// back to the web app.
+export const callback = functions.https.onRequest(
+    {secrets: [hueClientSecret]},
+    async (req, res) => {
+      const user = req.query.state?.toString();
+      const authorizationCode = req.query.code?.toString();
+      if (!user || !authorizationCode) {
+        res.status(400).send("Missing parameters!");
+        return;
+      }
+      const snapshot = await db.doc(`users/${user}`).get();
+      if (!snapshot.exists) {
+        res.status(404).send("Unknown user!");
+        return;
+      }
+      try {
+        const api: Api = await hueRemote().connectWithCode(authorizationCode);
         const remoteCredentials = api.remote!.getRemoteAccessCredentials();
-        api.lights.getAll().then((allLights: any) => {
-          const lights = allLights.map((light: any) => { return { "name": light.name, "id": light.id, "color": light.type.match(/color/i) != null }; });
-          db.doc(`users/${user}`).set({
-            "api": {
-              "name": "Philips Hue", "credentials": remoteCredentials, "lights": lights
-            },
-          }, { merge: true })
-              .then(() => res.redirect("https://app-lalo.tk/l/open"))
-              .catch((e: any) => {
-                console.error(e);
-                res.send("Can not connect to database!");
-              });
-        }).catch((e: any) => {
-          console.error(e);
-          res.send("Can not get lights!");
-        });
-      }).catch((e: any) => {
+        const allLights = await api.lights.getAll();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const lights = allLights.map((light: any) => ({
+          "name": light.name,
+          "id": light.id,
+          "color": light.type.match(/color/i) != null,
+        }));
+        await db.doc(`users/${user}`).set({
+          "api": {
+            "name": "Philips Hue",
+            "credentials": remoteCredentials,
+            "lights": lights,
+          },
+        }, {merge: true});
+        res.redirect(APP_URL);
+      } catch (e) {
         console.error(e);
-        res.send("Can not connect to Philips Hue!");
-      });
-});
+        res.status(500).send("Can not connect to Philips Hue!");
+      }
+    });
 
-// Blink light
-export const blink = functions.https.onCall((request) => {
-  let x = 0;
-  return db.doc(`users/${request.data.userId}`).get().then((snapshot: any) => {
-    if (snapshot.exists) {
-      for (const permission of snapshot.data().permissions) {
-        if (permission.uid === request.data.me) {
-          if (snapshot.data().api.name === "No services connected") return "Friend has no light";
-          if (snapshot.data().dnd === true || Date.now() - snapshot.data().light.last < 30 * 1000) return;
-          db.doc(`users/${request.data.userId}`).update({ "light.last": Date.now() });
-          if (snapshot.data().api.name === "Philips Hue") {
-            const cred = snapshot.data().api.credentials;
-            if (!cred) return "Could not connect to light";
-            return remoteBootstrap.connectWithTokens(
-                cred.tokens.access.value, cred.tokens.refresh.value, cred.username)
-                .then((api: Api) => {
-                  if (snapshot.data().light.name === "Not selected" || null) {
-                    return "Friend has no light";
-                  }
-                  return api.lights.getLightState(snapshot.data().light.id).then((value: any) => {
-                    const state = new v3.lightStates.LightState();
-                    const color = hexToRgb(permission.color);
-                    state.on().brightness(100).rgb(color);
-                    api.lights.setLightState(snapshot.data().light.id, state).then(() => {
-                      setTimeout(blinkLight, 1000, api, snapshot.data().light.id, true, color, value);
-                    });
-                  }).catch((e) => {
-                    console.error(e);
-                    return "Could not blink light";
-                  });
-                }).catch((e) => {
-                  console.error(e);
-                  return "Could not connect to light";
-                });
-          } else return "Could not connect to light";
+// Blinks the light of the user `userId` on behalf of the caller `me`,
+// provided the caller is in the user's permission list.
+export const blink = functions.https.onCall(
+    {secrets: [hueClientSecret]},
+    async (request) => {
+      const data = request.data as {
+        me: string;
+        userId: string;
+        userName: string;
+      };
+
+      /**
+       * Removes the (no longer valid) friend from the caller's list.
+       * @return {Promise<string>} status message for the client
+       */
+      async function removeFriend(): Promise<string> {
+        try {
+          await db.doc(`users/${data.me}`).update({
+            "friends": admin.firestore.FieldValue.arrayRemove(
+                {"uid": data.userId, "name": data.userName}),
+          });
+          return "Not your friend anymore";
+        } catch (e) {
+          console.error(e);
+          return "Could not remove friend";
         }
       }
-      return removeFriend(request.data);
-    } else {
-      return removeFriend(request.data);
-    }
-  }).catch((e: any) => {
-    console.error(e);
-    return "Unknown Error";
-  });
 
-  /**
-     * Remove a friend
-     * @param {object} data
-     * @return {Promise<string>}
-     */
-  function removeFriend(data: { me: string; userId: string, userName: string }): Promise<string> {
-    return db.doc(`users/${data.me}`).update({
-      "friends": admin.firestore.FieldValue.arrayRemove({ "uid": data.userId, "name": data.userName })
-    }).then(() => {
-      return "Not your friend anymore";
-    }).catch((e) => {
-      console.error(e);
-      return "Could not remove friend";
+      try {
+        const snapshot = await db.doc(`users/${data.userId}`).get();
+        if (!snapshot.exists) return removeFriend();
+        const friend = snapshot.data()!;
+        const permission = friend.permissions
+            .find((p: { uid: string }) => p.uid === data.me);
+        if (!permission) return removeFriend();
+
+        if (friend.api.name === "No services connected") {
+          return "Friend has no light";
+        }
+        if (friend.dnd === true ||
+            Date.now() - friend.light.last < 30 * 1000) {
+          return null;
+        }
+        if (friend.api.name !== "Philips Hue" || !friend.api.credentials) {
+          return "Could not connect to light";
+        }
+        if (friend.light.name === "Not selected") {
+          return "Friend has no light";
+        }
+        await db.doc(`users/${data.userId}`)
+            .update({"light.last": Date.now()});
+
+        const cred = friend.api.credentials;
+        let api: Api;
+        try {
+          api = await hueRemote().connectWithTokens(
+              cred.tokens.access.value,
+              cred.tokens.refresh.value,
+              cred.username);
+        } catch (e) {
+          console.error(e);
+          return "Could not connect to light";
+        }
+
+        const lightId = friend.light.id;
+        const color = hexToRgb(permission.color);
+        const original = await api.lights.getLightState(lightId);
+
+        /**
+         * Toggles the light, three blinks in total, then restores the
+         * original state.
+         * @param {boolean} on whether this step switches the light on
+         * @param {number} count how many toggles happened already
+         * @return {Promise<void>}
+         */
+        const blinkLight = async (
+            on: boolean, count: number): Promise<void> => {
+          const state = new v3.lightStates.LightState();
+          if (on) {
+            state.on().brightness(100).rgb(color);
+          } else {
+            state.off();
+          }
+          try {
+            await api.lights.setLightState(lightId, state);
+          } catch (e) {
+            console.error(e);
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          if (count < 3) {
+            await blinkLight(!on, count + 1);
+          } else {
+            try {
+              await api.lights.setLightState(lightId, original);
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        };
+
+        await blinkLight(true, 0);
+        return null;
+      } catch (e) {
+        console.error(e);
+        return "Unknown Error";
+      }
     });
-  }
-  /**
-     * Blink the light
-     * @param {Api} api
-     * @param {string} id
-     * @param {boolean} value
-     * @param {number[]} color
-     * @param {any} original
-     * @return {Promise<void>}
-     */
-  async function blinkLight(api: Api, id: string, value: boolean, color: number[], original: any): Promise<void> {
-    const state = new v3.lightStates.LightState();
-    if (value) state.off();
-    else state.on().brightness(100).rgb(color);
-    try {
-      await api.lights.setLightState(id, state);
-    } catch (e) {
-      console.error(e);
-    }
-    if (++x < 3) {
-      setTimeout(blinkLight, 1000, api, id, !value, color, original);
-    } else try {
-      await api.lights.setLightState(id, original);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  /**
-     * Converts HEX value to RGB
-     * @param {string} hex
-     * @return {[int, int, int]} rgb
-     */
-  function hexToRgb(hex: string) {
-    const result = hex.match(/[0-9a-fA-F]{1,2}/g);
-    return [
-      parseInt(result![0], 16),
-      parseInt(result![1], 16),
-      parseInt(result![2], 16)
-    ]
-  }
-});
 
-// Accept friend request
-export const accept = functions.https.onCall((request) => {
-  return db.doc(`users/${request.data.senderId}`).update({
-    "friends": admin.firestore.FieldValue.arrayUnion({
-      "name": request.data.friendName,
-      "uid": request.data.friendId
-    })
-  }).then(() => "Request accepted").catch((e: any) => {
+// Accepts a friend request: adds the accepting user to the sender's friends.
+export const accept = functions.https.onCall(async (request) => {
+  try {
+    await db.doc(`users/${request.data.senderId}`).update({
+      "friends": admin.firestore.FieldValue.arrayUnion({
+        "name": request.data.friendName,
+        "uid": request.data.friendId,
+      }),
+    });
+    return "Request accepted";
+  } catch (e) {
     console.error(e);
     return "Request could not be accepted";
-  });
+  }
 });
 
-export const refresh = onSchedule("1, 7, 13, 19, 25, 31 of month 00:00", (async (context) => {
-  await db.collection("users")
-      .where("api.credentials.tokens.access.expiresAt", "<", Date.now() + 6 * 24 * 60 * 60 * 1000)
-      .get().then((result) => {
-        result.forEach((user) => {
-          db.doc(`users/${user.id}`).get().then((snapshot: any) => {
-            if (snapshot.exists) {
-              const cred = snapshot.data().api.credentials;
-              remoteBootstrap.connectWithTokens(cred.tokens.access.value,
-                  cred.tokens.refresh.value,
-                  cred.username
-              ).then((api: Api) => {
-                            api.remote?.refreshTokens().then((refreshedTokens) => {
-                              db.doc(`users/${user.id}`).update({
-                                "api.credentials.tokens.access": refreshedTokens.accessToken,
-                                "api.credentials.tokens.refresh": refreshedTokens.refreshToken
-                              })
-                            })
-              })
-            }
-          })
-        });
-      }).catch((e) => {
+// Refreshes Hue tokens that expire within the next six days and deletes
+// friend-request links older than a week.
+export const refresh = onSchedule(
+    {
+      schedule: "1, 7, 13, 19, 25, 31 of month 00:00",
+      secrets: [hueClientSecret],
+    },
+    async () => {
+      try {
+        const expiring = await db.collection("users")
+            .where("api.credentials.tokens.access.expiresAt", "<",
+                Date.now() + 6 * 24 * 60 * 60 * 1000)
+            .get();
+        for (const user of expiring.docs) {
+          try {
+            const cred = user.data().api.credentials;
+            const api: Api = await hueRemote().connectWithTokens(
+                cred.tokens.access.value,
+                cred.tokens.refresh.value,
+                cred.username);
+            const refreshedTokens = await api.remote!.refreshTokens();
+            await db.doc(`users/${user.id}`).update({
+              "api.credentials.tokens.access": refreshedTokens.accessToken,
+              "api.credentials.tokens.refresh": refreshedTokens.refreshToken,
+            });
+          } catch (e) {
+            console.error(`Could not refresh tokens for ${user.id}`, e);
+          }
+        }
+      } catch (e) {
         console.error(e);
-      });
-  await db.collection("links").where("time", "<", Date.now() - 7 * 24 * 60 * 60 * 1000).get().then((result) => {
-    result.forEach((link) => {
-      db.doc(`links/${link.id}`).delete();
+      }
+      try {
+        const expired = await db.collection("links")
+            .where("time", "<", Date.now() - 7 * 24 * 60 * 60 * 1000)
+            .get();
+        await Promise.all(expired.docs.map((link) => link.ref.delete()));
+      } catch (e) {
+        console.error(e);
+      }
     });
-  }).catch((e) => {
-    console.error(e);
-  });
-}));
