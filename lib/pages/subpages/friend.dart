@@ -169,55 +169,61 @@ class FriendPage extends StatelessWidget {
               ),
             ],
           ),
-          body: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(10),
-                  children: [
-                    for (final permission in permissions)
-                      ListTile(
-                        leading: const Icon(Icons.account_circle_outlined),
-                        title: Text(permission['name']),
-                        subtitle: const Text('Tap to remove this friend'),
-                        onTap: () => _confirmRemove(
-                          context,
-                          Map<String, dynamic>.from(permission),
-                        ),
-                        trailing: hasColorLight
-                            ? GestureDetector(
-                                onTap: () => _pickColor(
-                                  context,
-                                  permissions,
-                                  Map<String, dynamic>.from(permission),
-                                ),
-                                child: Container(
-                                  width: 30,
-                                  height: 30,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      width: 1.5,
-                                      color: Colors.grey[400] ?? Colors.black,
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 700),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(10),
+                      children: [
+                        for (final permission in permissions)
+                          ListTile(
+                            leading: const Icon(Icons.account_circle_outlined),
+                            title: Text(permission['name']),
+                            subtitle: const Text('Tap to remove this friend'),
+                            onTap: () => _confirmRemove(
+                              context,
+                              Map<String, dynamic>.from(permission),
+                            ),
+                            trailing: hasColorLight
+                                ? GestureDetector(
+                                    onTap: () => _pickColor(
+                                      context,
+                                      permissions,
+                                      Map<String, dynamic>.from(permission),
                                     ),
-                                    shape: BoxShape.circle,
-                                    color: _fromHex(permission['color']),
-                                  ),
-                                ),
-                              )
-                            : null,
-                      ),
-                  ],
-                ),
+                                    child: Container(
+                                      width: 30,
+                                      height: 30,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          width: 1.5,
+                                          color:
+                                              Colors.grey[400] ?? Colors.black,
+                                        ),
+                                        shape: BoxShape.circle,
+                                        color: _fromHex(permission['color']),
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Text(
+                      'Here are all the friends who\'s requests you accepted!\nYou can remove them or change the color in which they blink your light',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[400]),
+                    ),
+                  ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: Text(
-                  'Here are all the friends who\'s requests you accepted!\nYou can remove them or change the color in which they blink your light',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[400]),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },

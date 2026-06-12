@@ -7,12 +7,13 @@ This file provides guidance to Claude Code (claude.com/claude-code) when working
 **Leave a Light on (lalo)** is a Flutter app (Android + Web) that lets you blink the smart
 lights of friends or loved ones when you are thinking about them.
 
-Flow: a user signs in (email or Google via Firebase Auth), connects their Philips Hue
-account (OAuth handled by the `callback` Cloud Function, tokens stored in Firestore),
-picks one of their lights, and shares an invite link. A friend who opens the link in the
+Flow: a user signs in (email or Google via Firebase Auth), connects a light service —
+**Philips Hue** (OAuth handled by the `callback` Cloud Function) or **Home Assistant**
+(URL + long-lived token validated by the `connectHomeAssistant` Cloud Function) — picks
+one of their lights, and shares an invite link. A friend who opens the link in the
 app/web app can accept the request; afterwards the friend can tap a tile on the home
 screen to blink the user's light in a chosen color (the `blink` Cloud Function talks to
-the Hue Remote API).
+the Hue Remote API or the Home Assistant REST API).
 
 Firebase project: `lalo-2605`. Web app is deployed to Firebase Hosting
 (`app.lalo.lighting`), the marketing page lives in `docs/` (GitHub Pages, `lalo.lighting`),
@@ -28,8 +29,9 @@ and the Android app ships to Google Play as `de.kjellhanken.lalo`.
   - `components/` — small reusable widgets (tiles, app bar)
   - `services/` — `globals.dart` (app-wide state/constants), `theme.dart`, `routes.dart`,
     `deep_links.dart` (invite-link handling), `services.dart` (barrel file)
-- `functions/` — Firebase Cloud Functions (TypeScript): Hue OAuth `callback`, `blink`,
-  `accept`, scheduled `refresh` (token refresh + expired-link cleanup)
+- `functions/` — Firebase Cloud Functions (TypeScript): Hue OAuth `callback`,
+  `connectHomeAssistant`, `blink`, `accept`, scheduled `refresh` (Hue token refresh +
+  expired-link cleanup)
 - `web/` — Flutter web shell; `web/.well-known/assetlinks.json` is required for Android
   App Links verification and is deployed via Hosting
 - `docs/` — static marketing/landing page, served by GitHub Pages (custom domain in
@@ -43,8 +45,10 @@ and the Android app ships to Google Play as `de.kjellhanken.lalo`.
 
 ## Data model (Firestore)
 
-- `users/{uid}`: `light` (name/id/last/color), `api` (name/credentials/lights),
+- `users/{uid}`: `light` (name/id/last/color), `api` (name + per-service fields:
+  Hue `credentials`, Home Assistant `url`/`token`, plus `lights`),
   `friends` [{uid, name}], `permissions` [{uid, name, color}], `dnd` (bool)
+  - `api.name` is the service discriminator: `'Philips Hue' | 'Home Assistant' | 'No services connected'`
   - `friends` = people whose lights *I* can blink; `permissions` = people allowed to blink *my* light
 - `links/{id}`: pending friend request (`senderId`, `senderName`, `time`); deleted on
   accept/deny, expired ones cleaned up by the scheduled `refresh` function

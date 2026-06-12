@@ -1,57 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-var themeLight = ThemeData(
-    brightness: Brightness.light,
-    bottomSheetTheme: BottomSheetThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+/// Brand color of Leave a Light on — keep in sync with docs/ (CSS --accent).
+const Color brandOrange = Colors.orange;
+
+ThemeData _baseTheme(Brightness brightness) {
+  final scheme = ColorScheme.fromSeed(
+    seedColor: brandOrange,
+    brightness: brightness,
+    primary: brandOrange,
+  );
+  return ThemeData(
+    colorScheme: scheme,
+    brightness: brightness,
     fontFamily: GoogleFonts.roboto().fontFamily,
-    appBarTheme: AppBarTheme(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        backgroundColor: Colors.orange,
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24)),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      selectedItemColor: Colors.orange,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: brandOrange,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+      ),
+      titleTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      indicatorColor: brandOrange.withValues(alpha: 0.25),
+    ),
+    bottomSheetTheme: const BottomSheetThemeData(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      showDragHandle: true,
+      // Keeps sheets phone-sized on desktop/web.
+      constraints: BoxConstraints(maxWidth: 480),
     ),
     inputDecorationTheme: InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: brandOrange,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.all<Color>(Colors.orange),
-        foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
-        padding: WidgetStateProperty.all<EdgeInsets>(
-          const EdgeInsets.all(15),
-        ),
-        textStyle:
-            WidgetStateProperty.all<TextStyle>(const TextStyle(fontSize: 20)),
+      style: OutlinedButton.styleFrom(
+        backgroundColor: brandOrange,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.all(15),
+        textStyle: const TextStyle(fontSize: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
-    colorScheme: ThemeData()
-        .colorScheme
-        .copyWith(primary: Colors.orange)
-        .copyWith(surface: Colors.white));
+  );
+}
 
-var themeDark = themeLight.copyWith(
-    bottomSheetTheme: themeLight.bottomSheetTheme.copyWith(
-      backgroundColor: Colors.grey[900],
-    ),
-    scaffoldBackgroundColor: Colors.grey[900],
-    iconTheme: const IconThemeData(color: Colors.white),
-    brightness: Brightness.dark,
-    appBarTheme: themeLight.appBarTheme.copyWith(
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 24),
-        iconTheme: const IconThemeData(color: Colors.white)),
-    inputDecorationTheme: themeLight.inputDecorationTheme.copyWith(
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey[400] ?? Colors.grey),
-        ),
-        labelStyle: const TextStyle(color: Colors.white)),
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      selectedItemColor: Colors.orange,
-      backgroundColor: Colors.grey[900],
-      unselectedItemColor: Colors.grey[100],
-    ),
-    dialogTheme: DialogThemeData(backgroundColor: Colors.grey[900]));
+final ThemeData themeLight = _baseTheme(Brightness.light);
+
+final ThemeData themeDark = _baseTheme(Brightness.dark).copyWith(
+  scaffoldBackgroundColor: Colors.grey[900],
+  bottomSheetTheme: _baseTheme(
+    Brightness.dark,
+  ).bottomSheetTheme.copyWith(backgroundColor: Colors.grey[850]),
+  dialogTheme: DialogThemeData(backgroundColor: Colors.grey[850]),
+);

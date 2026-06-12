@@ -41,6 +41,124 @@ function hexToRgb(hex: string): number[] {
   ];
 }
 
+/**
+ * Waits for the given number of milliseconds.
+ * @param {number} ms milliseconds to wait
+ * @return {Promise<void>}
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Request headers for the Home Assistant REST API.
+ * @param {string} token long-lived access token
+ * @return {Record<string, string>} headers
+ */
+function haHeaders(token: string): Record<string, string> {
+  return {
+    "Authorization": `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+}
+
+/**
+ * Blinks a Philips Hue light twice in the given color, then restores the
+ * previous state.
+ * @param {admin.firestore.DocumentData} friend the light owner's user doc
+ * @param {number[]} color RGB color to blink in
+ * @return {Promise<string|null>} error message for the client or null
+ */
+async function blinkHue(
+    friend: admin.firestore.DocumentData,
+    color: number[]): Promise<string | null> {
+  const cred = friend.api.credentials;
+  if (!cred) return "Could not connect to light";
+  let api: Api;
+  try {
+    api = await hueRemote().connectWithTokens(
+        cred.tokens.access.value,
+        cred.tokens.refresh.value,
+        cred.username);
+  } catch (e) {
+    console.error(e);
+    return "Could not connect to light";
+  }
+  try {
+    const lightId = friend.light.id;
+    const original = await api.lights.getLightState(lightId);
+    const setOn = new v3.lightStates.LightState();
+    setOn.on().brightness(100).rgb(color);
+    const setOff = new v3.lightStates.LightState();
+    setOff.off();
+    for (let i = 0; i < 2; i++) {
+      await api.lights.setLightState(lightId, setOn);
+      await sleep(1000);
+      await api.lights.setLightState(lightId, setOff);
+      await sleep(1000);
+    }
+    await api.lights.setLightState(lightId, original);
+    return null;
+  } catch (e) {
+    console.error(e);
+    return "Could not blink light";
+  }
+}
+
+/**
+ * Blinks a Home Assistant light twice in the given color, then restores the
+ * previous state.
+ * @param {admin.firestore.DocumentData} friend the light owner's user doc
+ * @param {number[]} color RGB color to blink in
+ * @return {Promise<string|null>} error message for the client or null
+ */
+async function blinkHomeAssistant(
+    friend: admin.firestore.DocumentData,
+    color: number[]): Promise<string | null> {
+  const url = (friend.api.url as string).replace(/\/+$/, "");
+  const headers = haHeaders(friend.api.token as string);
+  const entityId = friend.light.id as string;
+  const call = (service: string, body: Record<string, unknown>) =>
+    fetch(`${url}/api/services/light/${service}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+  try {
+    const origResp = await fetch(`${url}/api/states/${entityId}`, {headers});
+    if (!origResp.ok) return "Could not connect to light";
+    const original = await origResp.json() as {
+      state: string;
+      attributes?: { brightness?: number; rgb_color?: number[] };
+    };
+    const turnOn: Record<string, unknown> = {"entity_id": entityId};
+    if (friend.light.color === true) {
+      turnOn.rgb_color = color;
+      turnOn.brightness = 255;
+    }
+    for (let i = 0; i < 2; i++) {
+      await call("turn_on", turnOn);
+      await sleep(1000);
+      await call("turn_off", {"entity_id": entityId});
+      await sleep(1000);
+    }
+    if (original.state === "on") {
+      const restore: Record<string, unknown> = {"entity_id": entityId};
+      if (original.attributes?.brightness != null) {
+        restore.brightness = original.attributes.brightness;
+      }
+      if (original.attributes?.rgb_color != null) {
+        restore.rgb_color = original.attributes.rgb_color;
+      }
+      await call("turn_on", restore);
+    }
+    return null;
+  } catch (e) {
+    console.error(e);
+    return "Could not blink light";
+  }
+}
+
 // OAuth callback of the Hue Remote API: exchanges the authorization code for
 // tokens, stores them together with the user's lights and sends the user
 // back to the web app.
@@ -68,13 +186,16 @@ export const callback = functions.https.onRequest(
           "id": light.id,
           "color": light.type.match(/color/i) != null,
         }));
-        await db.doc(`users/${user}`).set({
+        await db.doc(`users/${user}`).update({
           "api": {
             "name": "Philips Hue",
             "credentials": remoteCredentials,
             "lights": lights,
           },
-        }, {merge: true});
+          "light": {
+            "name": "Not selected", "id": "", "color": false, "last": 0,
+          },
+        });
         res.redirect(APP_URL);
       } catch (e) {
         console.error(e);
@@ -118,75 +239,84 @@ export const blink = functions.https.onCall(
             .find((p: { uid: string }) => p.uid === data.me);
         if (!permission) return removeFriend();
 
-        if (friend.api.name === "No services connected") {
+        if (friend.api.name === "No services connected" ||
+            friend.light.name === "Not selected") {
           return "Friend has no light";
         }
         if (friend.dnd === true ||
             Date.now() - friend.light.last < 30 * 1000) {
           return null;
         }
-        if (friend.api.name !== "Philips Hue" || !friend.api.credentials) {
-          return "Could not connect to light";
-        }
-        if (friend.light.name === "Not selected") {
-          return "Friend has no light";
-        }
         await db.doc(`users/${data.userId}`)
             .update({"light.last": Date.now()});
 
-        const cred = friend.api.credentials;
-        let api: Api;
-        try {
-          api = await hueRemote().connectWithTokens(
-              cred.tokens.access.value,
-              cred.tokens.refresh.value,
-              cred.username);
-        } catch (e) {
-          console.error(e);
-          return "Could not connect to light";
-        }
-
-        const lightId = friend.light.id;
         const color = hexToRgb(permission.color);
-        const original = await api.lights.getLightState(lightId);
-
-        /**
-         * Toggles the light, three blinks in total, then restores the
-         * original state.
-         * @param {boolean} on whether this step switches the light on
-         * @param {number} count how many toggles happened already
-         * @return {Promise<void>}
-         */
-        const blinkLight = async (
-            on: boolean, count: number): Promise<void> => {
-          const state = new v3.lightStates.LightState();
-          if (on) {
-            state.on().brightness(100).rgb(color);
-          } else {
-            state.off();
-          }
-          try {
-            await api.lights.setLightState(lightId, state);
-          } catch (e) {
-            console.error(e);
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          if (count < 3) {
-            await blinkLight(!on, count + 1);
-          } else {
-            try {
-              await api.lights.setLightState(lightId, original);
-            } catch (e) {
-              console.error(e);
-            }
-          }
-        };
-
-        await blinkLight(true, 0);
-        return null;
+        if (friend.api.name === "Philips Hue") {
+          return blinkHue(friend, color);
+        }
+        if (friend.api.name === "Home Assistant") {
+          return blinkHomeAssistant(friend, color);
+        }
+        return "Could not connect to light";
       } catch (e) {
         console.error(e);
         return "Unknown Error";
+      }
+    });
+
+// Validates a Home Assistant URL + long-lived access token and stores the
+// available lights for the calling user.
+export const connectHomeAssistant = functions.https.onCall(
+    async (request) => {
+      if (!request.auth) {
+        throw new functions.https.HttpsError(
+            "unauthenticated", "You must be signed in");
+      }
+      const url = ((request.data.url as string) ?? "").trim()
+          .replace(/\/+$/, "");
+      const token = ((request.data.token as string) ?? "").trim();
+      if (!/^https?:\/\//.test(url) || !token) {
+        return "Invalid URL or token";
+      }
+      try {
+        const resp = await fetch(`${url}/api/states`, {
+          headers: haHeaders(token),
+        });
+        if (!resp.ok) return "Could not connect to Home Assistant";
+        const states = await resp.json() as Array<{
+          entity_id: string;
+          attributes?: {
+            friendly_name?: string;
+            supported_color_modes?: string[];
+          };
+        }>;
+        const colorModes = ["hs", "xy", "rgb", "rgbw", "rgbww"];
+        const lights = states
+            .filter((s) => s.entity_id.startsWith("light."))
+            .map((s) => ({
+              "name": s.attributes?.friendly_name ?? s.entity_id,
+              "id": s.entity_id,
+              "color": (s.attributes?.supported_color_modes ?? [])
+                  .some((m) => colorModes.includes(m)),
+            }));
+        if (lights.length === 0) {
+          return "No lights found in Home Assistant";
+        }
+        await db.doc(`users/${request.auth.uid}`).update({
+          "api": {
+            "name": "Home Assistant",
+            "url": url,
+            "token": token,
+            "lights": lights,
+          },
+          "light": {
+            "name": "Not selected", "id": "", "color": false, "last": 0,
+          },
+        });
+        return "Connected to Home Assistant";
+      } catch (e) {
+        console.error(e);
+        return "Could not connect to Home Assistant";
       }
     });
 

@@ -3,10 +3,10 @@
 Blink the smart lights of friends or loved ones when you are thinking about them.
 
 **Leave a Light on (lalo)** is a Flutter app for Android and the web. You sign in with
-email or Google (Firebase Auth), connect your Philips Hue account (OAuth tokens are
-created by a Cloud Function and stored in Firestore) and pick a light. Then you share an
-invite link with friends — once they accept, they can blink your light in their own
-color, and you can blink theirs.
+email or Google (Firebase Auth), connect your **Philips Hue** account or your
+**Home Assistant** instance and pick a light. Then you share an invite link with
+friends — once they accept, they can blink your light in their own color, and you can
+blink theirs.
 
 - 🌐 Web app: <https://app.lalo.lighting>
 - 📱 Play Store: <https://play.google.com/store/apps/details?id=de.kjellhanken.lalo>
@@ -19,7 +19,7 @@ color, and you can blink theirs.
 | App | Flutter (Android + Web) |
 | Auth | Firebase Auth + firebase_ui_auth (email, Google) |
 | Data | Cloud Firestore |
-| Backend | Cloud Functions (TypeScript, v2 API) talking to the Philips Hue Remote API |
+| Backend | Cloud Functions (TypeScript, v2 API) talking to the Hue Remote API / Home Assistant REST API |
 | Invites | HTTPS deep links + Android App Links (`app_links` package) |
 | Hosting | Firebase Hosting (web app), GitHub Pages (landing page) |
 | Release | fastlane + GitHub Actions → Firebase App Distribution / Play Store |

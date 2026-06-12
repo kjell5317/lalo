@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lalo/pages/subpages/friend.dart';
@@ -55,16 +56,131 @@ class _MorePageState extends State<MorePage> {
     }
   }
 
-  void _removeHue(BuildContext sheetContext) {
+  void _removeService(BuildContext sheetContext, String apiName) {
     userRef?.set({
       'api': {'name': 'No services connected', 'credentials': {}, 'lights': []},
       'light': {'name': 'Not selected', 'id': ''},
     }, SetOptions(merge: true));
-    Fluttertoast.showToast(msg: 'Removed Philips Hue', timeInSecForIosWeb: 3);
+    Fluttertoast.showToast(msg: 'Removed $apiName', timeInSecForIosWeb: 3);
     Navigator.pop(sheetContext);
   }
 
-  void _showServiceSheet(bool hueConnected) {
+  /// Asks for the Home Assistant URL and a long-lived access token, then lets
+  /// the `connectHomeAssistant` Cloud Function validate them and store the
+  /// available lights.
+  Future<void> _connectHomeAssistant(BuildContext sheetContext) async {
+    Navigator.pop(sheetContext);
+    final urlController = TextEditingController();
+    final tokenController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Connect Home Assistant'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Your Home Assistant must be reachable from the '
+                    'internet (e.g. Nabu Casa or your own domain). Create a '
+                    'long-lived access token in your Home Assistant profile '
+                    'under "Security".',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: urlController,
+                    keyboardType: TextInputType.url,
+                    decoration: const InputDecoration(
+                      labelText: 'URL',
+                      hintText: 'https://example.duckdns.org:8123',
+                    ),
+                    validator: (text) {
+                      final uri = Uri.tryParse(text?.trim() ?? '');
+                      if (uri == null ||
+                          !(uri.isScheme('http') || uri.isScheme('https')) ||
+                          uri.host.isEmpty) {
+                        return 'Enter a valid http(s) URL';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: tokenController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Long-lived access token',
+                    ),
+                    validator: (text) => (text == null || text.trim().isEmpty)
+                        ? 'Enter your access token'
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(dialogContext, true);
+                }
+              },
+              child: const Text('Connect'),
+            ),
+          ],
+        );
+      },
+    );
+    if (submitted != true) return;
+    Fluttertoast.showToast(
+      msg: 'Connecting to Home Assistant…',
+      timeInSecForIosWeb: 3,
+    );
+    try {
+      final resp = await FirebaseFunctions.instance
+          .httpsCallable('connectHomeAssistant')
+          .call(<String, String>{
+            'url': urlController.text.trim(),
+            'token': tokenController.text.trim(),
+          });
+      Fluttertoast.showToast(
+        msg: resp.data ?? 'Connected to Home Assistant',
+        timeInSecForIosWeb: 3,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      Fluttertoast.showToast(
+        msg: e.message ?? 'Could not connect to Home Assistant',
+        timeInSecForIosWeb: 3,
+      );
+    }
+  }
+
+  Widget _sheetButton(String caption, void Function() onPressed) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8.0),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(minimumSize: const Size(280, 50)),
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Text(caption, style: const TextStyle(fontSize: 18)),
+        ),
+      ),
+    );
+  }
+
+  void _showServiceSheet(String apiName) {
+    final connected = apiName != 'No services connected';
     showModalBottomSheet<void>(
       context: context,
       builder: (BuildContext sheetContext) {
@@ -80,28 +196,28 @@ class _MorePageState extends State<MorePage> {
                 Padding(
                   padding: const EdgeInsets.all(15.0),
                   child: Text(
-                    'Connect a service to let your friends blink your light',
+                    connected
+                        ? '$apiName is connected'
+                        : 'Connect a service to let your friends blink your light',
                     style: Theme.of(sheetContext).textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: ElevatedButton(
-                    onPressed: () => hueConnected
-                        ? _removeHue(sheetContext)
-                        : _connectHue(sheetContext),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Text(
-                        hueConnected
-                            ? 'Remove Philips Hue'
-                            : 'Connect Philips Hue',
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                    ),
+                if (connected)
+                  _sheetButton(
+                    'Remove $apiName',
+                    () => _removeService(sheetContext, apiName),
+                  )
+                else ...[
+                  _sheetButton(
+                    'Connect Philips Hue',
+                    () => _connectHue(sheetContext),
                   ),
-                ),
+                  _sheetButton(
+                    'Connect Home Assistant',
+                    () => _connectHomeAssistant(sheetContext),
+                  ),
+                ],
               ],
             ),
           ),
@@ -134,9 +250,7 @@ class _MorePageState extends State<MorePage> {
                       ),
                       onPressed: () {
                         Navigator.pop(sheetContext);
-                        userRef?.set({
-                          'light': light,
-                        }, SetOptions(merge: true));
+                        userRef?.set({'light': light}, SetOptions(merge: true));
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -171,8 +285,9 @@ class _MorePageState extends State<MorePage> {
           return const LoadingScreen();
         }
         final lightName = snapshot.data['light']['name'] ?? 'Not selected';
-        final apiName = snapshot.data['api']['name'] ?? 'No services connected';
-        final hueConnected = apiName == 'Philips Hue';
+        final String apiName =
+            snapshot.data['api']['name'] ?? 'No services connected';
+        final connected = apiName != 'No services connected';
         final permissions = snapshot.data['permissions'] as List<dynamic>;
 
         return ListView(
@@ -193,7 +308,7 @@ class _MorePageState extends State<MorePage> {
               title: const Text('Services'),
               subtitle: Text(apiName),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showServiceSheet(hueConnected),
+              onTap: () => _showServiceSheet(apiName),
             ),
             ListTile(
               leading: const Icon(Icons.lightbulb),
@@ -201,7 +316,7 @@ class _MorePageState extends State<MorePage> {
               subtitle: Text(lightName),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                if (hueConnected) {
+                if (connected) {
                   _showLightSheet(snapshot.data['api']['lights']);
                 } else {
                   Fluttertoast.showToast(

@@ -48,9 +48,7 @@ class _HomePageState extends State<HomePage> {
     if (link == null || _handlingLink) return;
     _handlingLink = true;
     try {
-      final linkDoc = await FirebaseFirestore.instance
-          .doc('links/$link')
-          .get();
+      final linkDoc = await FirebaseFirestore.instance.doc('links/$link').get();
       if (!mounted) return;
       if (!linkDoc.exists) {
         pendingLink.value = null;
@@ -268,12 +266,15 @@ class _HomePageState extends State<HomePage> {
         if (snapshot.data['friends'].length < 10) {
           tiles.add(const LaloAddTile());
         }
-        return GridView.count(
+        return GridView(
           primary: false,
           padding: const EdgeInsets.all(20),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          crossAxisCount: 2,
+          // Scales from 2 columns on phones to more on large screens.
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 220,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+          ),
           children: tiles,
         );
       },

@@ -46,65 +46,70 @@ class _FeedbackPageState extends State<FeedbackPage> {
             ),
           ],
         ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(10.0),
-              child: Icon(Icons.feedback, size: 100, color: Colors.orange),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Text(
-                'Feedback',
-                style: Theme.of(context).textTheme.displaySmall,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Form(
-                key: _formKey,
-                child: TextFormField(
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  controller: _controller,
-                  textInputAction: TextInputAction.done,
-                  validator: (String? text) {
-                    if (text == null || text.trim().isEmpty) {
-                      return 'Please enter your feedback';
-                    }
-                    return null;
-                  },
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Your feedback',
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child: Icon(Icons.feedback, size: 100, color: Colors.orange),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Text(
+                    'Feedback',
+                    style: Theme.of(context).textTheme.displaySmall,
                   ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    await FirebaseFirestore.instance
-                        .doc('feedback/${user!.uid}')
-                        .set({
-                          DateTime.now().millisecondsSinceEpoch.toString():
-                              _controller.text,
-                        }, SetOptions(merge: true));
-                    if (!context.mounted) return;
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Padding(
-                  padding: EdgeInsets.all(10.0),
-                  child: Text('Submit', style: TextStyle(fontSize: 18)),
+                Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: Form(
+                    key: _formKey,
+                    child: TextFormField(
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      controller: _controller,
+                      textInputAction: TextInputAction.done,
+                      validator: (String? text) {
+                        if (text == null || text.trim().isEmpty) {
+                          return 'Please enter your feedback';
+                        }
+                        return null;
+                      },
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Your feedback',
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        await FirebaseFirestore.instance
+                            .doc('feedback/${user!.uid}')
+                            .set({
+                              DateTime.now().millisecondsSinceEpoch.toString():
+                                  _controller.text,
+                            }, SetOptions(merge: true));
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(10.0),
+                      child: Text('Submit', style: TextStyle(fontSize: 18)),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     } else {

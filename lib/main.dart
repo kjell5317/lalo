@@ -22,9 +22,7 @@ import 'package:lalo/pages/subpages/loading.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   analytics = FirebaseAnalytics.instance;
   FirebaseUIAuth.configureProviders([
     GoogleProvider(clientId: googleClientId),
@@ -59,9 +57,10 @@ class _AppState extends State<App> {
 
   void setInitialData() {
     analytics!.logSignUp(
-        signUpMethod: user!.providerData.isNotEmpty
-            ? user!.providerData[0].providerId
-            : 'unknown');
+      signUpMethod: user!.providerData.isNotEmpty
+          ? user!.providerData[0].providerId
+          : 'unknown',
+    );
     userRef?.set({
       'light': {'name': 'Not selected', 'id': '', 'last': 0, 'color': false},
       'api': {'name': 'No services connected'},
@@ -85,13 +84,16 @@ class _AppState extends State<App> {
         adUnitId: bannerAdUnitId,
         size: AdSize.banner,
         request: const AdRequest(),
-        listener: BannerAdListener(onAdLoaded: (ad) {
-          setState(() {
-            _ad = ad as BannerAd;
-          });
-        }, onAdFailedToLoad: (Ad ad, LoadAdError error) {
-          ad.dispose();
-        }),
+        listener: BannerAdListener(
+          onAdLoaded: (ad) {
+            setState(() {
+              _ad = ad as BannerAd;
+            });
+          },
+          onAdFailedToLoad: (Ad ad, LoadAdError error) {
+            ad.dispose();
+          },
+        ),
       ).load();
     }
   }
@@ -99,73 +101,88 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'Leave a Light on',
-        routes: routes,
-        theme: themeLight,
-        darkTheme: themeDark.copyWith(
-            textTheme: Theme.of(context).textTheme.apply(
-                  bodyColor: Colors.white,
-                  displayColor: Colors.white,
-                )),
-        home: StreamBuilder(
-            stream: FirebaseAuth.instance.authStateChanges(),
+      title: 'Leave a Light on',
+      routes: routes,
+      theme: themeLight,
+      darkTheme: themeDark.copyWith(
+        textTheme: Theme.of(
+          context,
+        ).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+      ),
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (BuildContext context, AsyncSnapshot<Object?> snapshotAuth) {
+          if (snapshotAuth.connectionState == ConnectionState.waiting) {
+            return const LoadingScreen();
+          }
+          if (!snapshotAuth.hasData) {
+            return const LoginPage();
+          }
+          user = FirebaseAuth.instance.currentUser;
+          userRef = FirebaseFirestore.instance.doc('users/${user!.uid}');
+          return StreamBuilder(
+            stream: userRef?.snapshots(),
             builder:
-                (BuildContext context, AsyncSnapshot<Object?> snapshotAuth) {
-              if (snapshotAuth.connectionState == ConnectionState.waiting) {
-                return const LoadingScreen();
-              }
-              if (!snapshotAuth.hasData) {
-                return const LoginPage();
-              }
-              user = FirebaseAuth.instance.currentUser;
-              userRef = FirebaseFirestore.instance.doc('users/${user!.uid}');
-              return StreamBuilder(
-                  stream: userRef?.snapshots(),
-                  builder: (BuildContext context,
-                      AsyncSnapshot<DocumentSnapshot> snapshotDb) {
-                    if (!snapshotDb.hasData) {
-                      return const LoadingScreen();
-                    }
-                    if (!snapshotDb.data!.exists) {
-                      setInitialData();
-                      return const LoadingScreen();
-                    }
-                    if (user?.displayName == null) {
-                      return const NamePage();
-                    }
-                    return Scaffold(
-                      appBar: LaloAppBar(
-                        name: App._pages[_i].name,
-                      ),
-                      body: Column(children: [
+                (
+                  BuildContext context,
+                  AsyncSnapshot<DocumentSnapshot> snapshotDb,
+                ) {
+                  if (!snapshotDb.hasData) {
+                    return const LoadingScreen();
+                  }
+                  if (!snapshotDb.data!.exists) {
+                    setInitialData();
+                    return const LoadingScreen();
+                  }
+                  if (user?.displayName == null) {
+                    return const NamePage();
+                  }
+                  return Scaffold(
+                    appBar: LaloAppBar(name: App._pages[_i].name),
+                    body: Column(
+                      children: [
                         if (!kIsWeb && _ad != null)
                           Padding(
-                              padding: const EdgeInsets.only(top: 20.0),
-                              child: Container(
-                                alignment: Alignment.center,
-                                width: _ad!.size.width.toDouble(),
-                                height: _ad!.size.height.toDouble(),
-                                child: AdWidget(ad: _ad!),
-                              )),
-                        Expanded(
-                          child: IndexedStack(index: _i, children: App._pages),
-                        ),
-                      ]),
-                      bottomNavigationBar: BottomNavigationBar(
-                        items: <BottomNavigationBarItem>[
-                          BottomNavigationBarItem(
-                            icon: const Icon(Icons.home),
-                            label: App._pages[0].name,
+                            padding: const EdgeInsets.only(top: 20.0),
+                            child: Container(
+                              alignment: Alignment.center,
+                              width: _ad!.size.width.toDouble(),
+                              height: _ad!.size.height.toDouble(),
+                              child: AdWidget(ad: _ad!),
+                            ),
                           ),
-                          BottomNavigationBarItem(
-                              icon: const Icon(Icons.settings),
-                              label: App._pages[1].name),
-                        ],
-                        currentIndex: _i,
-                        onTap: _onItemTapped,
-                      ),
-                    );
-                  });
-            }));
+                        Expanded(
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 900),
+                              child: IndexedStack(
+                                index: _i,
+                                children: App._pages,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    bottomNavigationBar: NavigationBar(
+                      destinations: <NavigationDestination>[
+                        NavigationDestination(
+                          icon: const Icon(Icons.home),
+                          label: App._pages[0].name,
+                        ),
+                        NavigationDestination(
+                          icon: const Icon(Icons.settings),
+                          label: App._pages[1].name,
+                        ),
+                      ],
+                      selectedIndex: _i,
+                      onDestinationSelected: _onItemTapped,
+                    ),
+                  );
+                },
+          );
+        },
+      ),
+    );
   }
 }

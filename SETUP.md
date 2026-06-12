@@ -69,6 +69,22 @@ firebase deploy --only functions
 > ⚠️ The old secret was committed to git history. Rotate it in the Hue developer
 > portal ("regenerate client secret") and set the *new* value as the secret.
 
+### Home Assistant (no setup required on your side)
+
+Users can alternatively connect a **Home Assistant** instance: in the app under
+*More → Services → Connect Home Assistant* they enter their instance URL and a
+long-lived access token (Home Assistant profile → *Security* → *Long-lived access
+tokens*). The `connectHomeAssistant` function validates the pair against
+`GET <url>/api/states`, stores it in the user document and lists all `light.*`
+entities. `blink` then uses the Home Assistant REST API
+(`/api/services/light/turn_on|turn_off`).
+
+Requirements for users (worth mentioning in support docs):
+
+- The instance must be reachable **from the internet** (Nabu Casa remote URL, a
+  reverse proxy or port forwarding) — Cloud Functions can't reach `http://homeassistant.local`.
+- The token is stored in Firestore (same trust model as the Hue OAuth tokens).
+
 ## 4. Deep links (replaces Firebase Dynamic Links)
 
 Firebase Dynamic Links was shut down on 2025-08-25. Invites are now plain HTTPS links
@@ -163,6 +179,7 @@ account.
 - [ ] `flutter build web` and `flutter build appbundle --release` succeed
 - [ ] Sign in (email + Google) on web and Android
 - [ ] Connect Philips Hue → lights appear → select light
+- [ ] Connect Home Assistant (URL + token) → lights appear → select light
 - [ ] Share invite link from device A, open on device B (app opens via App Link),
       accept → blink works both ways
 - [ ] `https://app.lalo.lighting/.well-known/assetlinks.json` returns your fingerprints
