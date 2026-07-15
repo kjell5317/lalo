@@ -21,14 +21,15 @@ platform :android do
   lane :distribute do
     increment()
     sh("firebase deploy")
-    sh("flutter build appbundle --release")
-        # build_android_app is a built-in fastlane action.
+    # App Distribution can only process AABs when the Firebase project is
+    # linked to a Google Play developer account; without one, distribute APKs.
+    sh("flutter build apk --release")
         release = firebase_app_distribution(
             app: ENV["FIREBASE_APP_ID"],
             testers: "kjell5317@gmail.com",
             release_notes: "Lots of amazing new features to test out!",
-            android_artifact_type: "AAB",
-            android_artifact_path: "build/app/outputs/bundle/release/app-release.aab",
+            android_artifact_type: "APK",
+            android_artifact_path: "build/app/outputs/flutter-apk/app-release.apk",
             service_credentials_file: ENV["GOOGLE_APPLICATION_CREDENTIALS"]
         )
   end
