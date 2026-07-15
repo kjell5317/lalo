@@ -23,6 +23,8 @@ jobs:
       - name: install firebase-tools
         run: npm install -g firebase-tools
       - uses: flutter-actions/setup-flutter@v4
+      - name: accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
       - name: install dependencies
         run: |
           flutter pub global activate cider
