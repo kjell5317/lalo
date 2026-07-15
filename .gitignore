@@ -47,6 +47,11 @@ app.*.map.json
 
 # Firebase
 .firebase
-google-services.json
-firebase_options.dart
 *.env
+
+# NOTE: firebase_options.dart and android/app/google-services.json are committed
+# on purpose. They hold only public Firebase client identifiers (apiKey/appId),
+# which already ship in the web bundle and APK; access is gated by Firestore
+# rules / App Check, not by hiding these. CI needs them to build.
+# Real secrets (release keystore, key.properties, service account JSON) stay out
+# of git and are injected in CI via GitHub Actions secrets.

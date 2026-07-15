@@ -1,0 +1,64 @@
+{
+  "project_info": {
+    "project_number": "996256225333",
+    "project_id": "lalo-2605",
+    "storage_bucket": "lalo-2605.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:996256225333:android:4272519e77f553096ef97c",
+        "android_client_info": {
+          "package_name": "de.kjellhanken.lalo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "996256225333-0fu3kefgkh4j2q9a6rfvl12ui2cnmput.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "de.kjellhanken.lalo",
+            "certificate_hash": "212779aa2a47ce7c44a0d6e3b58804a6643745cb"
+          }
+        },
+        {
+          "client_id": "996256225333-1642e8supk939ghptl4l9bhfu6pitaju.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "de.kjellhanken.lalo",
+            "certificate_hash": "560e03b270f0d201d0732394cdf0ca97b6f1a490"
+          }
+        },
+        {
+          "client_id": "996256225333-ij2dakkm0ogf7i0t9997viscq8a5n7kj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "de.kjellhanken.lalo",
+            "certificate_hash": "4426240a7573e294d316de54c862f9959a8f08d8"
+          }
+        },
+        {
+          "client_id": "996256225333-pf7pkq5ru9i6v85qdog3fl5vgub99l6a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYGP0K0XbYSHt7kHGNdsx9mMpFYHjcops"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "996256225333-pf7pkq5ru9i6v85qdog3fl5vgub99l6a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      },
+      "admob_app_id": "ca-app-pub-1021570699948608~1324170208"
+    }
+  ],
+  "configuration_version": "1"
+}

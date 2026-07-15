@@ -27,8 +27,19 @@ jobs:
         run: |
           flutter pub global activate cider
           flutter pub get
+      - name: write Firebase service account key
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/gcp-key.json"
+      - name: write Android signing config
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
+          printf '%s' "$ANDROID_KEY_PROPERTIES" > android/key.properties
       - name: distribute to firebase
         run: bundle exec fastlane distribute
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
           FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
