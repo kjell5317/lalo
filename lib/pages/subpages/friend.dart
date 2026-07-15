@@ -56,7 +56,6 @@ class FriendPage extends StatelessWidget {
 
   void _pickColor(
     BuildContext context,
-    List<dynamic> permissions,
     Map<String, dynamic> permission,
   ) {
     Color pickerColor = _fromHex(permission['color']);
@@ -119,16 +118,26 @@ class FriendPage extends StatelessWidget {
                 padding: EdgeInsets.all(8.0),
                 child: Text('OK'),
               ),
-              onPressed: () {
-                final updated = permissions
-                    .map(
-                      (p) => p['uid'] == permission['uid']
-                          ? {...p, 'color': _toHex(pickerColor)}
-                          : p,
-                    )
-                    .toList();
-                userRef!.update({'permissions': updated});
-                Navigator.of(context).pop();
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                // Read-modify-write in a transaction so a concurrent change
+                // to `permissions` (e.g. a newly accepted friend) is not
+                // clobbered by writing back a stale array.
+                await FirebaseFirestore.instance.runTransaction((tx) async {
+                  final snap = await tx.get(userRef!);
+                  final current = (snap.get('permissions') as List)
+                      .map((p) => Map<String, dynamic>.from(p as Map))
+                      .toList();
+                  final updated = current
+                      .map(
+                        (p) => p['uid'] == permission['uid']
+                            ? {...p, 'color': _toHex(pickerColor)}
+                            : p,
+                      )
+                      .toList();
+                  tx.update(userRef!, {'permissions': updated});
+                });
+                navigator.pop();
               },
             ),
           ],
@@ -191,7 +200,6 @@ class FriendPage extends StatelessWidget {
                                 ? GestureDetector(
                                     onTap: () => _pickColor(
                                       context,
-                                      permissions,
                                       Map<String, dynamic>.from(permission),
                                     ),
                                     child: Container(

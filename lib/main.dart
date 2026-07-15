@@ -47,6 +47,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   BannerAd? _ad;
+  bool _initializedData = false;
 
   int _i = 0;
   void _onItemTapped(int index) {
@@ -102,6 +103,7 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Leave a Light on',
+      scaffoldMessengerKey: scaffoldMessengerKey,
       routes: routes,
       theme: themeLight,
       darkTheme: themeDark.copyWith(
@@ -131,7 +133,12 @@ class _AppState extends State<App> {
                     return const LoadingScreen();
                   }
                   if (!snapshotDb.data!.exists) {
-                    setInitialData();
+                    // Guard against build() firing repeatedly while the doc
+                    // is being created — otherwise logSignUp/set run each time.
+                    if (!_initializedData) {
+                      _initializedData = true;
+                      setInitialData();
+                    }
                     return const LoadingScreen();
                   }
                   if (user?.displayName == null) {

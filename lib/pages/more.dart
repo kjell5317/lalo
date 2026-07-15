@@ -1,7 +1,8 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lalo/pages/subpages/friend.dart';
 import 'package:lalo/pages/lalo_page.dart';
 import 'package:lalo/pages/subpages/loading.dart';
@@ -23,16 +24,26 @@ class _MorePageState extends State<MorePage> {
   String? _version;
   String? _buildNumber;
 
-  Uri get _hueAuthUrl => Uri(
+  Uri _hueAuthUrl(String state) => Uri(
     scheme: 'https',
     host: 'api.meethue.com',
     path: 'v2/oauth2/authorize',
     queryParameters: {
       'client_id': hueClientId,
       'response_type': 'code',
-      'state': user!.uid,
+      'state': state,
     },
   );
+
+  /// Unguessable single-use OAuth `state` nonce. Prevents an attacker from
+  /// linking their Hue account to someone else's lalo account (CSRF), which
+  /// was possible when `state` was just the (potentially known) user uid.
+  String _hueState() {
+    final random = Random.secure();
+    return List<int>.generate(32, (_) => random.nextInt(256))
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+  }
 
   @override
   void initState() {
@@ -48,20 +59,25 @@ class _MorePageState extends State<MorePage> {
 
   Future<void> _connectHue(BuildContext sheetContext) async {
     Navigator.pop(sheetContext);
-    if (!await launchUrl(_hueAuthUrl)) {
-      Fluttertoast.showToast(
-        msg: 'Could not open the Philips Hue login',
-        timeInSecForIosWeb: 3,
-      );
+    final state = _hueState();
+    await FirebaseFirestore.instance.doc('hueStates/$state').set({
+      'uid': user!.uid,
+      'time': DateTime.now().toUtc().millisecondsSinceEpoch,
+    });
+    if (!await launchUrl(_hueAuthUrl(state))) {
+      showAppToast('Could not open the Philips Hue login');
     }
   }
 
   void _removeService(BuildContext sheetContext, String apiName) {
-    userRef?.set({
-      'api': {'name': 'No services connected', 'credentials': {}, 'lights': []},
-      'light': {'name': 'Not selected', 'id': ''},
-    }, SetOptions(merge: true));
-    Fluttertoast.showToast(msg: 'Removed $apiName', timeInSecForIosWeb: 3);
+    // `update` replaces the whole `api`/`light` fields, so the stored Hue
+    // credentials or Home Assistant url + long-lived token are actually
+    // deleted (a `set(merge: true)` would leave those secrets behind).
+    userRef?.update({
+      'api': {'name': 'No services connected'},
+      'light': {'name': 'Not selected', 'id': '', 'color': false, 'last': 0},
+    });
+    showAppToast('Removed $apiName');
     Navigator.pop(sheetContext);
   }
 
@@ -142,10 +158,7 @@ class _MorePageState extends State<MorePage> {
       },
     );
     if (submitted != true) return;
-    Fluttertoast.showToast(
-      msg: 'Connecting to Home Assistant…',
-      timeInSecForIosWeb: 3,
-    );
+    showAppToast('Connecting to Home Assistant…');
     try {
       final resp = await FirebaseFunctions.instance
           .httpsCallable('connectHomeAssistant')
@@ -153,15 +166,9 @@ class _MorePageState extends State<MorePage> {
             'url': urlController.text.trim(),
             'token': tokenController.text.trim(),
           });
-      Fluttertoast.showToast(
-        msg: resp.data ?? 'Connected to Home Assistant',
-        timeInSecForIosWeb: 3,
-      );
+      showAppToast(resp.data ?? 'Connected to Home Assistant');
     } on FirebaseFunctionsException catch (e) {
-      Fluttertoast.showToast(
-        msg: e.message ?? 'Could not connect to Home Assistant',
-        timeInSecForIosWeb: 3,
-      );
+      showAppToast(e.message ?? 'Could not connect to Home Assistant');
     }
   }
 
@@ -319,10 +326,7 @@ class _MorePageState extends State<MorePage> {
                 if (connected) {
                   _showLightSheet(snapshot.data['api']['lights']);
                 } else {
-                  Fluttertoast.showToast(
-                    msg: 'No services connected',
-                    timeInSecForIosWeb: 3,
-                  );
+                  showAppToast('No services connected');
                 }
               },
             ),

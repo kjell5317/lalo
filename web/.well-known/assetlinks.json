@@ -5,8 +5,8 @@
       "namespace": "android_app",
       "package_name": "de.kjellhanken.lalo",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_PLAY_APP_SIGNING_SHA256",
-        "REPLACE_WITH_UPLOAD_OR_DEBUG_SHA256"
+        "CB:67:63:A0:74:BB:E2:4A:5D:A8:B5:28:1A:A5:74:04:80:06:32:6D:81:40:83:92:6D:B4:BE:74:40:F1:EC:AF",
+        "DC:05:4B:11:06:46:7D:AD:F4:28:F6:02:FB:8F:70:1E:10:E5:01:07:32:80:EC:FC:CA:AD:1D:63:2D:F5:87:42"
       ]
     }
   }

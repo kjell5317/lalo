@@ -28,16 +28,18 @@ function hueRemote() {
 }
 
 /**
- * Converts a HEX color to RGB.
+ * Converts a HEX color to RGB. Falls back to white for malformed input so a
+ * bad stored color can never crash the blink handler.
  * @param {string} hex color like "ff8800"
  * @return {number[]} [r, g, b]
  */
 function hexToRgb(hex: string): number[] {
-  const result = hex.match(/[0-9a-fA-F]{1,2}/g);
+  const result = hex.match(/[0-9a-fA-F]{2}/g);
+  if (!result || result.length < 3) return [255, 255, 255];
   return [
-    parseInt(result![0], 16),
-    parseInt(result![1], 16),
-    parseInt(result![2], 16),
+    parseInt(result[0], 16),
+    parseInt(result[1], 16),
+    parseInt(result[2], 16),
   ];
 }
 
@@ -60,6 +62,53 @@ function haHeaders(token: string): Record<string, string> {
     "Authorization": `Bearer ${token}`,
     "Content-Type": "application/json",
   };
+}
+
+/**
+ * Whether a URL host is a loopback, private, or link-local target that must
+ * not be reached through a user-supplied URL (SSRF guard). Covers IP literals
+ * and common internal hostnames.
+ * @param {string} host hostname or IP literal from a parsed URL
+ * @return {boolean} true if the host must be blocked
+ */
+function isBlockedHost(host: string): boolean {
+  let h = host.toLowerCase();
+  if (h.startsWith("[") && h.endsWith("]")) h = h.slice(1, -1);
+  if (h === "localhost" || h.endsWith(".localhost") ||
+      h.endsWith(".local") || h.endsWith(".internal") || h === "metadata") {
+    return true;
+  }
+  // IPv6 loopback, unique-local (fc00::/7) and link-local (fe80::/10).
+  if (h === "::" || h === "::1" || /^f[cd][0-9a-f]{2}:/.test(h) ||
+      /^fe[89ab][0-9a-f]:/.test(h)) {
+    return true;
+  }
+  const v4 = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!v4) return false;
+  const p = v4.slice(1).map((n) => parseInt(n, 10));
+  if (p.some((n) => n > 255)) return true;
+  return (
+    p[0] === 0 ||
+    p[0] === 10 ||
+    p[0] === 127 ||
+    (p[0] === 169 && p[1] === 254) ||
+    (p[0] === 172 && p[1] >= 16 && p[1] <= 31) ||
+    (p[0] === 192 && p[1] === 168) ||
+    (p[0] === 100 && p[1] >= 64 && p[1] <= 127)
+  );
+}
+
+/**
+ * Validates that a user-supplied URL targets a public host (SSRF guard).
+ * @param {string} url an http(s) URL
+ * @return {boolean} true if the URL is safe to fetch
+ */
+function isPublicUrl(url: string): boolean {
+  try {
+    return !isBlockedHost(new URL(url).hostname);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -116,6 +165,7 @@ async function blinkHomeAssistant(
     friend: admin.firestore.DocumentData,
     color: number[]): Promise<string | null> {
   const url = (friend.api.url as string).replace(/\/+$/, "");
+  if (!isPublicUrl(url)) return "Could not connect to light";
   const headers = haHeaders(friend.api.token as string);
   const entityId = friend.light.id as string;
   const call = (service: string, body: Record<string, unknown>) =>
@@ -165,12 +215,26 @@ async function blinkHomeAssistant(
 export const callback = functions.https.onRequest(
     {secrets: [hueClientSecret]},
     async (req, res) => {
-      const user = req.query.state?.toString();
+      const state = req.query.state?.toString();
       const authorizationCode = req.query.code?.toString();
-      if (!user || !authorizationCode) {
+      if (!state || !authorizationCode) {
         res.status(400).send("Missing parameters!");
         return;
       }
+      // `state` is an unguessable single-use nonce created by the client in
+      // `hueStates/{nonce}`; it maps back to the user that started the flow.
+      const stateSnap = await db.doc(`hueStates/${state}`).get();
+      if (!stateSnap.exists) {
+        res.status(400).send("Invalid or expired state!");
+        return;
+      }
+      const stateData = stateSnap.data()!;
+      await stateSnap.ref.delete();
+      if (Date.now() - (stateData.time ?? 0) > 60 * 60 * 1000) {
+        res.status(400).send("Invalid or expired state!");
+        return;
+      }
+      const user = stateData.uid as string;
       const snapshot = await db.doc(`users/${user}`).get();
       if (!snapshot.exists) {
         res.status(404).send("Unknown user!");
@@ -278,6 +342,9 @@ export const connectHomeAssistant = functions.https.onCall(
       if (!/^https?:\/\//.test(url) || !token) {
         return "Invalid URL or token";
       }
+      if (!isPublicUrl(url)) {
+        return "Home Assistant must be reachable at a public address";
+      }
       try {
         const resp = await fetch(`${url}/api/states`, {
           headers: haHeaders(token),
@@ -322,6 +389,14 @@ export const connectHomeAssistant = functions.https.onCall(
 
 // Accepts a friend request: adds the accepting user to the sender's friends.
 export const accept = functions.https.onCall(async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError(
+        "unauthenticated", "You must be signed in");
+  }
+  if (request.data.friendId !== request.auth.uid) {
+    throw new functions.https.HttpsError(
+        "permission-denied", "You can only accept requests as yourself");
+  }
   try {
     await db.doc(`users/${request.data.senderId}`).update({
       "friends": admin.firestore.FieldValue.arrayUnion({
@@ -373,6 +448,14 @@ export const refresh = onSchedule(
             .where("time", "<", Date.now() - 7 * 24 * 60 * 60 * 1000)
             .get();
         await Promise.all(expired.docs.map((link) => link.ref.delete()));
+      } catch (e) {
+        console.error(e);
+      }
+      try {
+        const staleStates = await db.collection("hueStates")
+            .where("time", "<", Date.now() - 24 * 60 * 60 * 1000)
+            .get();
+        await Promise.all(staleStates.docs.map((s) => s.ref.delete()));
       } catch (e) {
         console.error(e);
       }

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lalo/components/lalo_add_tile.dart';
 import 'package:lalo/components/lalo_tile.dart';
 import 'package:lalo/pages/lalo_page.dart';
@@ -21,7 +20,6 @@ class HomePage extends StatefulWidget implements LaloPage {
 class _HomePageState extends State<HomePage> {
   final Map<String, Color> _color = {};
   bool _handlingLink = false;
-  bool _waitingForLight = false;
 
   @override
   void initState() {
@@ -36,9 +34,7 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  void _toast(String msg) {
-    Fluttertoast.showToast(msg: msg, timeInSecForIosWeb: 3);
-  }
+  void _toast(String msg) => showAppToast(msg);
 
   /// Validates the pending friend-request link and shows the accept/deny
   /// modal. If no light is selected yet the link stays pending and this is
@@ -73,13 +69,15 @@ class _HomePageState extends State<HomePage> {
         return;
       }
       if (me['light']['name'] == 'Not selected') {
-        if (!_waitingForLight) {
-          _waitingForLight = true;
+        // Prompt once per link, tracked at module scope so a rebuild/remount
+        // (e.g. switching tabs) doesn't re-show the toast.
+        if (lightPromptShownFor != link) {
+          lightPromptShownFor = link;
           _toast('Select a light before you can accept the request');
         }
         return;
       }
-      _waitingForLight = false;
+      lightPromptShownFor = null;
       pendingLink.value = null;
       _showRequestModal(link, linkData);
     } finally {
@@ -228,35 +226,37 @@ class _HomePageState extends State<HomePage> {
         if (!snapshot.hasData) {
           return const LoadingScreen();
         }
-        if (_waitingForLight &&
-            pendingLink.value != null &&
+        // Once a link is pending and a light has been selected (possibly just
+        // now, on the More tab), re-run handling to show the accept modal.
+        if (pendingLink.value != null &&
             snapshot.data['light']['name'] != 'Not selected') {
           WidgetsBinding.instance.addPostFrameCallback(
             (_) => _handlePendingLink(),
           );
         }
+        final dnd = snapshot.data['dnd'] == true;
         List<Widget> tiles = snapshot.data['friends']
             .map((i) {
-              if (!_color.containsKey(i['uid'])) {
-                _color[i['uid']] = Colors.orange;
+              final uid = i['uid'];
+              // `_color` tracks only the 30 s per-friend cooldown; the Do Not
+              // Disturb state is applied as a render-time overlay so toggling
+              // DND off restores the tiles instead of leaving them stuck blue.
+              if (!_color.containsKey(uid)) {
+                _color[uid] = Colors.orange;
               }
-              if (snapshot.data['dnd']) {
-                for (var k in _color.keys) {
-                  _color[k] = Colors.lightBlueAccent;
-                }
-              }
+              final cooling = _color[uid] != Colors.orange;
               return LaloTile(
-                color: _color[i['uid']]!,
+                color: dnd ? Colors.lightBlueAccent : _color[uid]!,
                 text: i['name'],
                 icon: Icons.lightbulb,
                 onTap: () {
-                  if (_color[i['uid']] == Colors.orange) {
-                    _changeColor(i['uid']);
-                    _blink(i);
-                  } else if (snapshot.data['dnd']) {
+                  if (dnd) {
                     _toast('Switch off Do Not Disturb mode');
-                  } else {
+                  } else if (cooling) {
                     _toast('Please wait at least 30 seconds');
+                  } else {
+                    _changeColor(uid);
+                    _blink(i);
                   }
                 },
               );

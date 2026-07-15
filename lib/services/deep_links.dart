@@ -9,13 +9,22 @@ import 'package:flutter/foundation.dart';
 /// accept/deny modal once the user is ready (signed in, light selected).
 final ValueNotifier<String?> pendingLink = ValueNotifier(null);
 
+/// Link id the user has already been asked to pick a light for. Kept at module
+/// scope (not in `HomePage`'s state) so the "select a light" prompt survives a
+/// rebuild/remount and is shown once per link instead of on every tab switch.
+String? lightPromptShownFor;
+
 Future<void> initDeepLinks() async {
   if (kIsWeb) {
     _handleUri(Uri.base);
     return;
   }
-  // The stream also emits the link the app was launched with.
-  AppLinks().uriLinkStream.listen(_handleUri);
+  final appLinks = AppLinks();
+  // The launch link must be fetched explicitly — subscribing to the stream
+  // alone can miss it if the native side delivers it before Dart listens.
+  final initial = await appLinks.getInitialLink();
+  if (initial != null) _handleUri(initial);
+  appLinks.uriLinkStream.listen(_handleUri);
 }
 
 void _handleUri(Uri uri) {
