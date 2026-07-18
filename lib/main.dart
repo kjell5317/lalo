@@ -49,6 +49,22 @@ class _AppState extends State<App> {
   BannerAd? _ad;
   bool _initializedData = false;
 
+  // Created once. Switching tabs rebuilds this widget; handing the
+  // StreamBuilders a fresh stream each build reset them to ConnectionState
+  // .waiting for a frame — flashing the LoadingScreen (the flicker) and
+  // remounting the tab pages. Stable streams keep the last snapshot instead.
+  final Stream<User?> _authState = FirebaseAuth.instance.authStateChanges();
+  Stream<DocumentSnapshot>? _userDoc;
+  String? _userDocUid;
+
+  Stream<DocumentSnapshot> _userDocStream(String uid) {
+    if (_userDocUid != uid) {
+      _userDocUid = uid;
+      _userDoc = FirebaseFirestore.instance.doc('users/$uid').snapshots();
+    }
+    return _userDoc!;
+  }
+
   int _i = 0;
   void _onItemTapped(int index) {
     setState(() {
@@ -112,7 +128,7 @@ class _AppState extends State<App> {
         ).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
       ),
       home: StreamBuilder(
-        stream: FirebaseAuth.instance.authStateChanges(),
+        stream: _authState,
         builder: (BuildContext context, AsyncSnapshot<Object?> snapshotAuth) {
           if (snapshotAuth.connectionState == ConnectionState.waiting) {
             return const LoadingScreen();
@@ -123,7 +139,7 @@ class _AppState extends State<App> {
           user = FirebaseAuth.instance.currentUser;
           userRef = FirebaseFirestore.instance.doc('users/${user!.uid}');
           return StreamBuilder(
-            stream: userRef?.snapshots(),
+            stream: _userDocStream(user!.uid),
             builder:
                 (
                   BuildContext context,
