@@ -7,6 +7,20 @@ import 'package:lalo/pages/subpages/loading.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:lalo/services/services.dart';
 
+/// When each friend's light was last blinked (friend uid -> time). Kept at
+/// module scope so the 30 s cooldown survives the HomePage being remounted
+/// when the user switches tabs (like [lightPromptShownFor]) — instance state
+/// would be lost on remount and the tile would wrongly re-enable early.
+final Map<String, DateTime> _lastBlinked = {};
+
+/// How long a tile stays disabled after a blink — mirrors the server-side
+/// rate limit the `blink` function enforces via `light.last`.
+const Duration _blinkCooldown = Duration(seconds: 30);
+
+/// Tile background while a friend is on cooldown: a muted grey so the tile
+/// reads clearly as temporarily disabled.
+final Color _cooldownColor = Colors.lightBlueAccent;
+
 class HomePage extends StatefulWidget implements LaloPage {
   const HomePage({super.key});
 
@@ -18,7 +32,9 @@ class HomePage extends StatefulWidget implements LaloPage {
 }
 
 class _HomePageState extends State<HomePage> {
-  final Map<String, Color> _color = {};
+  // uids that already have a pending re-enable timer, so [_scheduleCooldownEnd]
+  // doesn't stack duplicate timers across rebuilds.
+  final Set<String> _cooldownTimers = {};
   bool _handlingLink = false;
 
   @override
@@ -190,18 +206,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _changeColor(String uid) async {
-    setState(() {
-      _color[uid] = Colors.lightBlueAccent;
-    });
-    await Future.delayed(const Duration(seconds: 30));
-    if (!mounted) return;
-    setState(() {
-      _color[uid] = Colors.orange;
+  bool _isCooling(String uid) {
+    final last = _lastBlinked[uid];
+    return last != null && DateTime.now().difference(last) < _blinkCooldown;
+  }
+
+  /// Schedules a single rebuild for when [uid]'s cooldown ends so the tile
+  /// re-enables on its own — including after a remount, where the timer from
+  /// the previous State was lost but [_lastBlinked] survived.
+  void _scheduleCooldownEnd(String uid) {
+    final last = _lastBlinked[uid];
+    if (last == null) return;
+    final remaining = _blinkCooldown - DateTime.now().difference(last);
+    if (remaining <= Duration.zero || !_cooldownTimers.add(uid)) return;
+    Future.delayed(remaining, () {
+      _cooldownTimers.remove(uid);
+      if (mounted) setState(() {});
     });
   }
 
   Future<void> _blink(Map<String, dynamic> friend) async {
+    final uid = friend['uid'] as String;
     var resp = await FirebaseFunctions.instance.httpsCallable('blink').call(
       <String, String>{
         'userId': friend['uid'],
@@ -212,9 +237,8 @@ class _HomePageState extends State<HomePage> {
     if (resp.data != null) {
       _toast(resp.data);
       if (!mounted) return;
-      setState(() {
-        _color[friend['uid']] = Colors.orange;
-      });
+      // The blink didn't happen (error/status message), so lift the cooldown.
+      setState(() => _lastBlinked.remove(uid));
     }
   }
 
@@ -237,16 +261,18 @@ class _HomePageState extends State<HomePage> {
         final dnd = snapshot.data['dnd'] == true;
         List<Widget> tiles = snapshot.data['friends']
             .map((i) {
-              final uid = i['uid'];
-              // `_color` tracks only the 30 s per-friend cooldown; the Do Not
-              // Disturb state is applied as a render-time overlay so toggling
-              // DND off restores the tiles instead of leaving them stuck blue.
-              if (!_color.containsKey(uid)) {
-                _color[uid] = Colors.orange;
-              }
-              final cooling = _color[uid] != Colors.orange;
+              final String uid = i['uid'];
+              // The cooldown comes from [_lastBlinked] (module scope, so it
+              // survives a tab-switch remount); Do Not Disturb is a render-time
+              // overlay so toggling DND off restores the tiles right away.
+              final cooling = _isCooling(uid);
+              if (cooling) _scheduleCooldownEnd(uid);
               return LaloTile(
-                color: dnd ? Colors.lightBlueAccent : _color[uid]!,
+                color: dnd
+                    ? Colors.lightBlueAccent
+                    : cooling
+                    ? _cooldownColor
+                    : Colors.orange,
                 text: i['name'],
                 icon: Icons.lightbulb,
                 onTap: () {
@@ -255,7 +281,8 @@ class _HomePageState extends State<HomePage> {
                   } else if (cooling) {
                     _toast('Please wait at least 30 seconds');
                   } else {
-                    _changeColor(uid);
+                    setState(() => _lastBlinked[uid] = DateTime.now());
+                    _scheduleCooldownEnd(uid);
                     _blink(i);
                   }
                 },
