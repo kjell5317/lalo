@@ -21,8 +21,11 @@ class LoginPage extends StatelessWidget {
         );
       },
       actions: [
+        // Only record the event here. The auth-state StreamBuilder in [App]
+        // swaps this screen for the home page automatically once sign-in
+        // completes — navigating as well raced that rebuild and crashed on a
+        // deactivated context.
         AuthStateChangeAction<SignedIn>((context, value) {
-          Navigator.of(context).pushReplacementNamed('/home');
           analytics!.logLogin();
         }),
       ],

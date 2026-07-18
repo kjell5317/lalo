@@ -411,6 +411,71 @@ export const accept = functions.https.onCall(async (request) => {
   }
 });
 
+/**
+ * Returns a stored `friends`/`permissions` array with every entry that
+ * references `uid` removed. Both arrays hold objects keyed by `uid`, so the
+ * exact object (name/color) can differ between docs — filter by uid instead.
+ * @param {unknown} arr a stored friends or permissions array (may be missing)
+ * @param {string} uid the uid whose entries should be dropped
+ * @return {Array<{uid: string}>} the filtered array
+ */
+function withoutUid(arr: unknown, uid: string): Array<{uid: string}> {
+  return ((arr ?? []) as Array<{uid: string}>).filter((e) => e.uid !== uid);
+}
+
+// Permanently deletes the calling user. Runs with admin privileges so it can
+// remove the user from every connected person's `friends`/`permissions` lists
+// (which Firestore rules forbid the client to touch), delete their pending
+// invite links and user document, then delete the auth account itself.
+export const deleteAccount = functions.https.onCall(async (request) => {
+  if (!request.auth) {
+    throw new functions.https.HttpsError(
+        "unauthenticated", "You must be signed in");
+  }
+  const uid = request.auth.uid;
+  const userRef = db.doc(`users/${uid}`);
+  try {
+    const snap = await userRef.get();
+    if (snap.exists) {
+      const data = snap.data()!;
+      // People whose light I can blink (my `friends`) list me in their
+      // `permissions`; people who can blink my light (my `permissions`) list
+      // me in their `friends`. Either way, drop every entry pointing at me.
+      const others = new Set<string>();
+      for (const list of [data.friends, data.permissions]) {
+        for (const e of (list ?? []) as Array<{uid: string}>) {
+          others.add(e.uid);
+        }
+      }
+      await Promise.all([...others].map((other) =>
+        db.runTransaction(async (tx) => {
+          const ref = db.doc(`users/${other}`);
+          const os = await tx.get(ref);
+          if (!os.exists) return;
+          const d = os.data()!;
+          tx.update(ref, {
+            "friends": withoutUid(d.friends, uid),
+            "permissions": withoutUid(d.permissions, uid),
+          });
+        }).catch((e) => console.error(`Cleanup for ${other} failed`, e)),
+      ));
+    }
+    // Invite links this user still had pending.
+    const links = await db.collection("links")
+        .where("senderId", "==", uid).get();
+    await Promise.all(links.docs.map((d) => d.ref.delete()));
+    // Feedback is keyed by uid (best effort).
+    await db.doc(`feedback/${uid}`).delete().catch(() => undefined);
+    await userRef.delete();
+    await admin.auth().deleteUser(uid);
+    return "Account deleted";
+  } catch (e) {
+    console.error(e);
+    throw new functions.https.HttpsError(
+        "internal", "Could not delete your account");
+  }
+});
+
 // Refreshes Hue tokens that expire within the next six days and deletes
 // friend-request links older than a week.
 export const refresh = onSchedule(
