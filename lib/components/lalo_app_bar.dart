@@ -9,6 +9,7 @@ class LaloAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      automaticallyImplyLeading: false,
       title: Text(name),
       actions: [
         Padding(
